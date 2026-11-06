@@ -1,0 +1,2473 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#f6f5fb" />
+  <title>心脏+ - AI健康管家</title>
+  <script src="assets/lucide.min.js"></script>
+  <script src="assets/prototype-state.js?v=20260901-3"></script>
+  <script src="assets/watch-flow-content.js"></script>
+  <script src="assets/app-shell.js?v=20260901-4"></script>
+  <link rel="stylesheet" href="assets/app-shell.css?v=20260901-4">
+  <link rel="stylesheet" href="assets/watch-flow.css">
+  <link rel="stylesheet" href="assets/merged-nav.css">
+  <script src="assets/merged-nav.js" defer></script>
+  <style>
+    :root {
+      --app-bg: #f6f5fb;
+      --surface: #ffffff;
+      --surface-muted: #f0eff6;
+      --ink: #20222a;
+      --muted: #767985;
+      --line: #e4e3eb;
+      --blue: #64a8f0;
+      --blue-deep: #2f7dcc;
+      --purple: #a788ff;
+      --pink: #ec6f9d;
+      --success: #39a982;
+      --warning: #d78b34;
+      --danger: #cf596a;
+      --shadow: 0 18px 40px rgba(79, 73, 111, 0.12);
+      --radius-card: 24px;
+      --radius-control: 18px;
+      --safe-bottom: 18px;
+    }
+
+    * { box-sizing: border-box; }
+    html { background: #eceaf2; }
+    body {
+      min-height: 100dvh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: #eceaf2;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button, input { font: inherit; }
+    button { cursor: pointer; touch-action: manipulation; }
+    button:focus-visible, input:focus-visible { outline: 3px solid rgba(100, 168, 240, 0.55); outline-offset: 3px; }
+
+    .phone {
+      width: min(100vw, 375px);
+      height: min(100dvh, 812px);
+      min-height: 640px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      background: var(--app-bg);
+      box-shadow: 0 18px 48px rgba(51, 44, 77, 0.18);
+    }
+
+    .status-bar {
+      height: 42px;
+      flex: 0 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 22px 0;
+      color: #08090d;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    .status-icons { display: flex; align-items: center; gap: 5px; }
+    .status-icons i { width: 17px; height: 17px; stroke-width: 2.6; }
+    .battery { width: 22px; height: 11px; border: 1.7px solid #08090d; border-radius: 3px; position: relative; margin-left: 3px; }
+    .battery::before { content: ""; position: absolute; inset: 2px; background: #08090d; border-radius: 1px; }
+    .battery::after { content: ""; position: absolute; right: -4px; top: 3px; width: 2px; height: 4px; background: #08090d; border-radius: 0 2px 2px 0; }
+
+    .app-header {
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      flex: 0 0 auto;
+    }
+    .brand-lockup { display: flex; align-items: center; gap: 9px; }
+    .brand-orb { width: 29px; height: 29px; border-radius: 50%; background: linear-gradient(145deg, #d9cffd, #8cbdf8); padding: 3px; box-shadow: 0 5px 12px rgba(128, 112, 201, 0.22); }
+    .brand-orb img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .app-header strong { font-size: 17px; letter-spacing: 0; }
+    .status-bar, .app-header { display: none; }
+    .chat-scroll {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: 0 16px 344px;
+      scroll-padding-bottom: 344px;
+      scrollbar-width: none;
+    }
+    .chat-scroll::-webkit-scrollbar { display: none; }
+
+    .welcome-reference { width: calc(100% + 32px); display: block; margin: 0 -16px 10px; }
+
+    .message { margin: 10px 0; display: flex; flex-direction: column; gap: 7px; }
+    .message.assistant { align-items: flex-start; }
+    .message.user { align-items: flex-end; }
+    .assistant-name { display: flex; align-items: center; gap: 7px; color: #8a8796; font-size: 12px; padding-left: 4px; }
+    .assistant-name .tiny-avatar { width: 22px; height: 22px; object-fit: contain; border-radius: 50%; background: #e9e1ff; }
+    .bubble { max-width: 82%; padding: 12px 14px; border-radius: 18px; font-size: 15px; line-height: 1.55; }
+    .bubble.assistant-bubble { background: var(--surface); border-top-left-radius: 6px; box-shadow: 0 8px 18px rgba(65, 58, 85, 0.06); }
+    .bubble.user-bubble { color: #fff; background: var(--blue); border-top-right-radius: 6px; box-shadow: 0 9px 18px rgba(100, 168, 240, 0.24); }
+
+    .workflow-card, .summary-card {
+      width: 100%;
+      background: var(--surface);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow);
+    }
+
+    .workflow-wrap { margin: 12px 0 22px; }
+    .workflow-card { overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.8); }
+    .workflow-head { padding: 16px 16px 12px; display: flex; align-items: flex-start; gap: 10px; }
+    .workflow-head .head-icon { width: 29px; height: 29px; flex: 0 0 auto; display: grid; place-items: center; color: var(--purple); background: #f0eafd; border-radius: 10px; }
+    .workflow-head .head-icon i { width: 18px; height: 18px; }
+    .workflow-title { margin: 0; font-size: 17px; font-weight: 750; line-height: 1.3; }
+    .workflow-body { padding: 0 16px 16px; }
+    .workflow-card.locked { opacity: 0.62; box-shadow: 0 5px 12px rgba(65, 58, 85, 0.04); }
+    .workflow-card.locked button, .workflow-card.locked input { pointer-events: none; }
+    .workflow-state { margin-left: auto; white-space: nowrap; color: var(--success); font-size: 12px; font-weight: 700; }
+    .workflow-card.error-state { border-color: #f0d8c2; }
+    .workflow-card.error-state .head-icon { color: var(--warning); background: #fff4e8; }
+    .workflow-card.error-state .workflow-state { color: var(--warning); }
+
+    .notice { padding: 11px 12px; display: flex; gap: 8px; align-items: flex-start; color: #69657a; background: #faf8ff; border: 1px solid #e8e0fd; border-radius: 13px; font-size: 13px; line-height: 1.5; }
+    .notice i { width: 17px; height: 17px; flex: 0 0 auto; color: var(--purple); margin-top: 1px; }
+    .primary-button, .secondary-button, .text-button {
+      min-height: 46px;
+      border-radius: 15px;
+      padding: 0 15px;
+      border: 0;
+      font-weight: 700;
+      transition: transform 180ms ease, opacity 180ms ease, background 180ms ease;
+    }
+    .primary-button { width: 100%; color: #fff; background: var(--blue); box-shadow: 0 9px 17px rgba(100,168,240,0.22); }
+    .primary-button:hover { background: var(--blue-deep); transform: translateY(-1px); }
+    .secondary-button { color: var(--blue-deep); background: #edf6ff; }
+    .secondary-button:hover { background: #e0effd; }
+    .text-button { color: var(--blue-deep); background: transparent; }
+    .button-row { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 12px; }
+    .button-row .primary-button, .button-row .secondary-button, .button-row .text-button { width: 100%; margin: 0; text-align: center; }
+    .button-stack { display: grid; justify-items: center; gap: 5px; margin-top: 12px; }
+    .button-stack .primary-button { width: 100%; }
+    .button-stack .secondary-button, .button-stack .text-button { margin: 0; text-align: center; }
+    .workflow-body > button:only-of-type { display: block; width: auto !important; min-width: 176px; margin-right: auto !important; margin-left: auto !important; }
+    .workflow-body > button:only-of-type.text-button { min-width: 0; padding-right: 14px; padding-left: 14px; }
+    .workflow-body > .notice + button:only-of-type { margin-top: 12px !important; }
+    button:disabled { opacity: 0.48; cursor: not-allowed; transform: none !important; }
+
+    .device-list { list-style: none; margin: 12px 0 0; padding: 0; border-top: 1px solid var(--line); }
+    .device-row { width: 100%; min-height: 66px; display: flex; align-items: center; gap: 11px; border: 0; border-bottom: 1px solid var(--line); background: transparent; padding: 10px 0; text-align: left; color: var(--ink); }
+    .device-row:last-child { border-bottom: 0; }
+    .device-icon { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 12px; background: #ecf5ff; color: var(--blue-deep); }
+    .device-icon i { width: 21px; height: 21px; }
+    .device-meta { min-width: 0; flex: 1; }
+    .device-name { display: block; font-size: 15px; font-weight: 700; }
+    .device-sub { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; }
+    .device-end { text-align: right; color: var(--success); font-size: 12px; font-weight: 700; }
+    .device-end i { width: 18px; height: 18px; color: #a1a0aa; }
+
+    .searching { display: flex; align-items: center; gap: 11px; padding: 14px 0 4px; color: #606271; font-size: 14px; }
+    .spinner { width: 20px; height: 20px; flex: 0 0 auto; border: 2px solid #d7eaff; border-top-color: var(--blue); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .binding-success { display: flex; align-items: center; gap: 9px; padding: 12px 0 4px; color: #4f806b; font-size: 14px; }
+    .binding-success i { width: 21px; height: 21px; color: var(--success); }
+
+    .segmented { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 10px 0 14px; }
+    .segmented.duration { grid-template-columns: repeat(3, 1fr); }
+    .segment { position: relative; min-height: 43px; display: grid; place-items: center; color: #686b78; border: 1px solid #dedee7; border-radius: 13px; background: #fff; font-size: 14px; font-weight: 650; }
+    .segment input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .segment.selected { color: var(--blue-deep); border-color: var(--blue); background: #edf6ff; }
+    .form-label { display: block; margin: 14px 0 0; color: #555865; font-size: 14px; font-weight: 700; }
+    .electrode-guide { display: flex; align-items: center; justify-content: center; gap: 14px; min-height: 68px; margin: 12px 0 2px; color: var(--blue-deep); background: #f7fbff; border: 1px solid #dcecfb; border-radius: 14px; }
+    .electrode-guide i { width: 31px; height: 31px; }
+    .electrode-guide .guide-link { width: 18px; height: 1px; background: #9ec7ef; position: relative; }
+    .electrode-guide .guide-link::before, .electrode-guide .guide-link::after { content: ''; position: absolute; top: -3px; width: 7px; height: 7px; border: 1px solid #9ec7ef; border-radius: 50%; background: #fff; }
+    .electrode-guide .guide-link::before { left: -5px; }
+    .electrode-guide .guide-link::after { right: -5px; }
+
+    .check-list { list-style: none; margin: 4px 0 12px; padding: 0; }
+    .check-list li { min-height: 35px; display: flex; align-items: center; gap: 9px; color: #6c6f7d; font-size: 13px; }
+    .check-list i { width: 18px; height: 18px; color: #c6c8d2; }
+    .check-list li.done i { color: var(--success); }
+    .countdown { padding: 12px 0 2px; color: var(--blue-deep); text-align: center; font-size: 28px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+    .firmware-progress { display: grid; justify-items: center; gap: 10px; padding: 2px 0 13px; }
+    .firmware-ring { --firmware-progress: 0%; position: relative; width: 86px; aspect-ratio: 1; display: grid; place-items: center; border-radius: 50%; background: conic-gradient(var(--blue) var(--firmware-progress), #e9f2fa 0); }
+    .firmware-ring::after { position: absolute; width: 72px; aspect-ratio: 1; border-radius: 50%; background: #fff; content: ''; }
+    .firmware-ring strong { position: relative; z-index: 1; color: #273247; font-size: 18px; font-variant-numeric: tabular-nums; }
+    .firmware-note-list { margin: 4px 0 12px; padding: 10px 12px; list-style: none; color: #777587; background: #fafbfe; border-radius: 13px; font-size: 12px; line-height: 1.65; }
+    .firmware-note-list li::before { margin-right: 6px; color: var(--blue); content: '·'; }
+    .firmware-steps { margin: 2px 0 8px; padding: 0; list-style: none; }
+    .firmware-steps li { display: flex; align-items: center; gap: 8px; min-height: 31px; color: #737487; font-size: 13px; }
+    .firmware-steps i { width: 17px; height: 17px; color: #c9ccd5; }
+    .firmware-steps li.done i { color: var(--success); }
+    .firmware-steps li.active { color: #3f4e68; font-weight: 700; }
+    .firmware-steps li.active i { color: var(--blue); }
+    .firmware-steps li.failed { color: #ef6c76; }
+    .firmware-steps li.failed i { color: #ef6c76; }
+    .firmware-hold { display: grid; justify-items: center; gap: 9px; margin: 2px 0 12px; padding: 15px 14px; color: #52617a; background: #f8fbff; border: 1px solid #dbeafb; border-radius: 15px; text-align: center; font-size: 14px; line-height: 1.55; }
+    .installation-illustration { position: relative; width: 170px; height: 86px; overflow: hidden; border-radius: 12px; background: linear-gradient(180deg, #eef8ff 0%, #e2f1ff 100%); }
+    .installation-arrow { position: absolute; z-index: 3; top: 2px; left: calc(50% - 8px); color: #5eaeef; font-size: 22px; font-weight: 800; line-height: 1; }
+    .installation-device { position: absolute; z-index: 2; top: 27px; left: calc(50% - 34px); width: 68px; height: 41px; display: flex; align-items: center; justify-content: center; gap: 4px; color: #fff; background: #485466; border: 3px solid #6c7a8c; border-radius: 8px; box-shadow: 0 7px 13px rgba(55, 78, 104, 0.2); font-size: 9px; font-weight: 800; }
+    .installation-device i { width: 18px; height: 18px; }
+    .installation-hand { position: absolute; z-index: 4; bottom: -10px; width: 55px; height: 55px; padding: 10px; color: #f1c89d; fill: #f7d9b6; background: #f7d9b6; border-radius: 50% 50% 0 0; }
+    .installation-hand.left { left: 13px; transform: rotate(25deg); }
+    .installation-hand.right { right: 13px; transform: scaleX(-1) rotate(25deg); }
+    .firmware-hold .spinner { display: inline-block; width: 17px; height: 17px; margin-right: 7px; vertical-align: -3px; }
+
+    .binding-power-guide { display: grid; justify-items: center; margin: 2px 0 11px; padding: 11px 12px; background: #f8fbff; border: 1px solid #dbeafb; border-radius: 15px; }
+    .power-on-illustration { position: relative; width: 196px; height: 104px; overflow: hidden; }
+    .power-on-device { position: absolute; z-index: 2; top: 38px; left: calc(50% - 78px); width: 156px; height: 48px; display: flex; align-items: center; justify-content: center; color: #fff; background: #485466; border: 3px solid #687688; border-radius: 9px; box-shadow: 0 7px 13px rgba(55, 78, 104, 0.18); }
+    .power-on-electrode { position: absolute; top: 4px; width: 40px; height: 34px; background: #edf0f2; border: 1px solid #ccd3d9; border-radius: 5px; }
+    .power-on-electrode.left { left: 5px; }
+    .power-on-electrode.right { right: 5px; }
+    .power-on-led { width: 7px; height: 7px; border-radius: 50%; background: #4fce91; box-shadow: 0 0 0 4px rgba(79, 206, 145, 0.15), 0 0 10px rgba(79, 206, 145, 0.8); }
+    .power-on-finger { position: absolute; z-index: 3; top: 6px; width: 38px; height: 38px; padding: 6px; color: #6b90ad; background: #fff; border: 2px solid #cfe4f4; border-radius: 50%; box-shadow: 0 4px 9px rgba(74, 116, 150, 0.12); }
+    .power-on-finger.left { left: 19px; transform: rotate(-8deg); }
+    .power-on-finger.right { right: 19px; transform: rotate(8deg); }
+    .power-on-finger i { width: 23px; height: 23px; }
+    .power-on-touch { position: absolute; z-index: 4; top: 33px; width: 8px; height: 8px; background: var(--blue); border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 0 3px rgba(97, 167, 239, 0.18); }
+    .power-on-touch.left { left: 54px; }
+    .power-on-touch.right { right: 54px; }
+
+    .measurement-panel { padding: 12px; border: 1px solid #e6e8ed; border-radius: 17px; background: #fbfcff; }
+    .measure-metrics { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin: 4px 0 10px; }
+    .metric-value { font-size: 27px; font-weight: 800; color: #2d82cf; font-variant-numeric: tabular-nums; }
+    .metric-label { margin-top: 2px; color: var(--muted); font-size: 12px; }
+    .measure-time { text-align: right; color: var(--ink); font-size: 17px; font-weight: 750; font-variant-numeric: tabular-nums; }
+    .measure-time span { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; font-weight: 500; }
+    .measure-divider { width: 1px; height: 32px; background: #e2e5eb; }
+    .wave-canvas { width: 100%; height: 92px; display: block; border-radius: 12px; background: #f1f8ff; }
+    .measure-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 9px; color: var(--muted); font-size: 12px; }
+    .measure-subline { margin-top: 8px; color: var(--muted); font-size: 12px; }
+    .measure-subline strong { margin-left: 4px; color: var(--ink); font-variant-numeric: tabular-nums; }
+    .signal-good { display: flex; align-items: center; gap: 5px; color: var(--success); font-weight: 700; }
+    .gain { display: flex; gap: 5px; }
+    .gain button { min-width: 32px; min-height: 30px; border: 1px solid #e0e3e8; border-radius: 10px; color: #717481; background: #fff; font-size: 12px; }
+    .gain button.active { border-color: var(--blue); color: var(--blue-deep); background: #edf6ff; }
+
+    .summary-card { overflow: hidden; margin-top: 3px; border: 1px solid #edf0f3; box-shadow: 0 5px 14px rgba(65, 58, 85, 0.04); }
+    .summary-card { cursor: pointer; }
+    .summary-top { padding: 15px 14px 7px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .summary-diagnosis { min-width: 0; }
+    .summary-diagnosis h3 { margin: 0; font-size: 16px; line-height: 1.35; }
+    .summary-time { color: #969aa3; font-size: 12px; white-space: nowrap; }
+    .source-tag { display:inline-flex; align-items:center; gap:3px; padding:0; color:#7b8ba0; background:transparent; border-radius:0; font-size:11px; font-weight:400; white-space:nowrap; }
+    .source-tag i { width:13px; height:13px; color:#6e95bf; }
+    .summary-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 14px 10px; color: #555963; font-size: 12px; }
+    .summary-meta-copy { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .summary-wave { padding: 0 10px; }
+    .summary-wave .wave-canvas { height: 106px; border: 1px solid #e8e8e8; border-radius: 5px; background: #fff; }
+    .summary-data-line { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 14px; color:#989ba5; border-bottom:1px solid #f0f1f3; font-size:11px; }
+    .summary-data-line strong { margin-left:2px; color:inherit; font-weight:400; }
+    .summary-metrics { padding: 4px 14px 5px; }
+    .summary-metric { min-height: 35px; display: flex; align-items: center; justify-content: space-between; gap: 12px; color: #343842; font-size: 14px; }
+    .summary-metric > span:first-child { flex: 0 0 auto; }
+    .metric-badge { min-width: 52px; padding: 4px 8px; border-radius: 6px; color: #fff; text-align: center; font-size: 12px; font-weight: 700; }
+    .metric-badge.risk-summary-badge { display: block; min-width: 0; max-width: 58%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .metric-badge.high { background: #ff7d82; }
+    .metric-badge.low { background: #62d7b2; }
+    .metric-badge.mild { background: #55d0a8; }
+    .metric-badge.medium { background: #f6ce50; }
+    .summary-detail-button { width: 100%; min-height: 43px; border: 0; border-top: 1px solid #f0f1f3; color: #6197e8; background: transparent; font-size: 14px; font-weight: 700; }
+    .ai-disclaimer { margin: 8px 14px 13px; color: #9a9da5; font-size: 11px; line-height: 1.45; }
+
+    .composer-area { position: absolute; z-index: 4; left: 0; right: 0; bottom: calc(104px + var(--safe-bottom)); padding: 0 16px; background: transparent; }
+    .workflow-shortcuts { display: flex; gap: 8px; margin-bottom: 10px; overflow-x: auto; scrollbar-width: none; }
+    .workflow-shortcuts::-webkit-scrollbar { display: none; }
+    .workflow-shortcut { min-height: 34px; padding: 0 13px; border: 0; border-radius: 18px; color: #4e515d; background: rgba(255,255,255,0.95); box-shadow: 0 7px 17px rgba(67,61,90,0.07); font-size: 13px; font-weight: 650; }
+    .workflow-shortcut.internal-only { display: none; }
+    .workflow-progress-shortcut { width: 34px; min-width: 34px; padding: 0; display: grid; place-items: center; color: #fff; background: #f18a55; }
+    .workflow-progress-shortcut[hidden] { display: none; }
+    .workflow-progress-shortcut i { width: 19px; height: 19px; }
+    .composer { position: relative; min-height: 124px; padding: 16px 18px 11px; background: var(--surface); border-radius: 28px; box-shadow: 0 12px 26px rgba(65,58,85,0.09); }
+    .chat-input { width: 100%; min-width: 0; min-height: 49px; border: 0; resize: none; outline: 0; color: var(--ink); background: transparent; font-size:18px; line-height:1.45; padding:0; }
+    .chat-input::placeholder { color: #a7a7b1; }
+    .icon-button { position:absolute; bottom:11px; width:42px; height:42px; display:grid; place-items:center; border:0; border-radius:50%; background:transparent; color:var(--ink); }
+    .voice-button { left: 18px; }
+    .plus-button { right: 73px; }
+    .icon-button:hover { background: #f1f1f6; }
+    .icon-button i { width: 23px; height: 23px; }
+    .send-button { right: 18px; color: #fff; background: #cdb0f6; box-shadow: 0 5px 12px rgba(158,123,220,0.26); }
+    .send-button:hover { background: #ba98ea; }
+
+    .bottom-nav { position:absolute; z-index:5; left:16px; right:16px; bottom:calc(10px + var(--safe-bottom)); height:78px; display:grid; grid-template-columns:repeat(5, 1fr); align-items:center; padding:4px 8px; background:rgba(255,255,255,0.96); border-radius:39px; box-shadow:0 10px 25px rgba(65,58,85,0.09); }
+    .nav-button { min-height:56px; border:0; background:transparent; color:#8a8a90; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; border-radius:15px; font-size:12px; }
+    .nav-button i { width: 23px; height: 23px; fill: currentColor; }
+    .nav-button.active { color: var(--purple); font-weight: 800; }
+    .nav-button.active span { display: none; }
+    .nav-button.active .nav-avatar { display:block; width:48px; height:48px; margin-top:-12px; padding:2px; object-fit:contain; border-radius:50%; background:#eae1ff; box-shadow:0 5px 13px rgba(150,126,226,0.28); }
+    .nav-avatar { display: none; }
+
+    .toast { position: absolute; z-index: 30; left: 50%; bottom: 316px; max-width: calc(100% - 48px); transform: translate(-50%, 18px); padding: 11px 14px; color: #fff; background: rgba(32,34,42,0.92); border-radius: 13px; font-size: 13px; line-height: 1.4; opacity: 0; pointer-events: none; transition: opacity 180ms ease, transform 180ms ease; box-shadow: 0 10px 25px rgba(25,26,35,0.2); }
+    .toast.visible { opacity: 1; transform: translate(-50%, 0); }
+
+    .record-entry-card .workflow-head { padding-bottom: 10px; }
+    .record-entry-card .workflow-head .head-icon { color: #ef7077; background: #fff0f1; }
+    .record-entry-card .workflow-body { padding-top: 0; }
+    .record-entry-summary { margin: 0 0 12px; color: #6f7380; font-size: 13px; line-height: 1.55; }
+    .record-entry-brief { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 2px 0 13px; padding: 11px 12px; border-radius: 13px; color: #454a54; background: #f8f9fc; font-size: 13px; }
+    .record-entry-brief strong { display: block; color: #262a32; font-size: 14px; }
+    .record-entry-brief span { color: #8b8f9a; font-size: 12px; white-space: nowrap; }
+    .record-list-entry { margin: 10px 0 22px; padding: 0 10px; }
+    .record-list-trigger { width: 100%; min-height: 52px; border: 1.5px solid #70b9f4; border-radius: 27px; color: var(--blue); background: rgba(255,255,255,.9); font-size: 16px; font-weight: 700; box-shadow: 0 7px 16px rgba(85,151,219,.09); }
+    .record-list-trigger:hover { color: #fff; background: var(--blue); border-color: var(--blue); }
+
+    .record-drawer { position: absolute; inset: 0; z-index: 26; display: none; align-items: flex-end; background: rgba(31,29,41,.42); }
+    .record-drawer.open { display: flex; }
+    .record-drawer-sheet { width: 100%; height: min(82%, 670px); display: flex; flex-direction: column; overflow: hidden; border-radius: 25px 25px 0 0; background: var(--app-bg); box-shadow: 0 -14px 34px rgba(42,38,58,.18); animation: drawer-up .24s ease-out; }
+    @keyframes drawer-up { from { transform: translateY(28px); opacity: .7; } to { transform: translateY(0); opacity: 1; } }
+    .drawer-handle { width: 32px; height: 4px; flex: 0 0 auto; margin: 8px auto 1px; border-radius: 99px; background: #c9cad4; }
+    .record-drawer-header { position:relative; min-height:50px; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:0 16px; }
+    .record-drawer-header h2 { position:absolute; top:50%; left:50%; margin:0; transform:translate(-50%,-50%); color:#252932; font-size:17px; white-space:nowrap; }
+    .record-drawer-close { width: 34px; height: 34px; display: grid; place-items: center; border: 0; border-radius: 50%; color: #5f6470; background: #ececf2; }
+    .record-drawer-close i { width: 18px; height: 18px; }
+    .record-drawer-tools { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 16px 9px; }
+    .record-status-tabs { display: grid; grid-template-columns: 1fr 1fr; flex: 1; min-height: 43px; padding: 5px; border: 1px solid #fff; border-radius: 24px; background: #ececf3; box-shadow: 0 6px 12px rgba(65,58,85,.08); }
+    .record-status-tab { border: 0; border-radius: 18px; color: #636773; background: transparent; font-size: 13px; font-weight: 700; }
+    .record-status-tab.active { color: #292d35; background: #fff; }
+    .record-filter-trigger { min-height: 35px; display: inline-flex; align-items: center; gap: 4px; padding: 0 8px; border: 1px solid #d8e9fb; border-radius: 17px; color: #397fbe; background: #f6fbff; font-size: 11px; font-weight: 700; white-space: nowrap; }
+    .record-filter-trigger i { width: 14px; height: 14px; }
+    .record-filter-menu { position: absolute; z-index: 3; top: 0; left: 16px; width: 154px; padding: 6px; border: 1px solid #e2e4ea; border-radius: 12px; background: #fff; box-shadow: 0 12px 24px rgba(65,58,85,.16); }
+    .record-filter-menu[hidden] { display: none; }
+    .record-filter-option { width: 100%; min-height: 32px; padding: 0 8px; border: 0; border-radius: 7px; color: #626672; background: transparent; text-align: left; font-size: 12px; }
+    .record-filter-option.active { color: #2f7dcc; background: #edf6ff; font-weight: 700; }
+    .record-drawer-scroll { flex: 1; overflow-y: auto; padding: 2px 16px 26px; scrollbar-width: none; }
+    .record-drawer-scroll::-webkit-scrollbar { display: none; }
+    .record-drawer-list { display: grid; gap: 12px; }
+    .drawer-record { width: 100%; padding: 14px; border: 0; border-radius: 20px; color: var(--ink); background: var(--surface); box-shadow: 0 8px 18px rgba(65,58,85,.08); text-align: left; }
+    .drawer-record:active { transform: scale(.99); }
+    .drawer-record-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .drawer-record-title { margin: 0; font-size: 16px; line-height: 1.35; }
+    .drawer-record-time { color: #92949d; font-size: 12px; white-space: nowrap; }
+    .drawer-record-meta { display: flex; align-items: center; gap: 7px; min-height: 31px; margin-top: 7px; }
+    .drawer-record-meta > span:first-child { min-width: 0; flex: 1; color: #3b3e47; font-size: 13px; }
+    .drawer-record-tag { padding: 4px 7px; border-radius: 6px; color: #6aa7f4; background: #f3f8ff; font-size: 11px; font-weight: 700; white-space: nowrap; }
+    .drawer-record-tag.read { color: #59d3ad; background: #effcf7; }
+    .drawer-record-wave { width: 100%; height: 82px; display: block; margin-top: 3px; border: 1px solid #d7d7dc; border-radius: 7px; background: #fff; }
+    .drawer-record-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 7px; color: #989ba5; font-size: 11px; }
+    .drawer-record-footer .source-tag { display: inline-flex; align-items: center; gap: 3px; color: #7b8ba0; white-space: nowrap; }
+    .drawer-record-footer .source-tag i { width: 13px; height: 13px; color: #6e95bf; }
+    .record-drawer-empty { padding: 42px 16px; color: #777b87; text-align: center; }
+    .record-drawer-empty i { width: 38px; height: 38px; color: #b8c8d9; }
+    .record-drawer-empty h3 { margin: 9px 0 4px; color: #454852; font-size: 16px; }
+    .record-drawer-empty p { margin: 0; font-size: 13px; }
+
+    .overlay { position: absolute; inset: 0; z-index: 20; display: none; flex-direction: column; background: var(--app-bg); }
+    .overlay.open { display: flex; animation: enter 240ms ease-out; }
+    @keyframes enter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .detail-status { height: 38px; flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; color: #111; font-size: 14px; font-weight: 750; }
+    .detail-status .status-icons { gap: 5px; }
+    .detail-status .status-icons i { width: 16px; height: 16px; }
+    .detail-status .battery { width: 22px; height: 10px; }
+    .detail-header { height: 43px; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; background: var(--app-bg); }
+    .detail-header h2 { margin: 0; font-size: 17px; }
+    .detail-back { width: 36px; height: 36px; display: grid; place-items: center; border: 0; border-radius: 50%; color: var(--ink); background: transparent; }
+    .detail-back i { width: 20px; height: 20px; }
+    .detail-scroll { flex: 1; overflow-y: auto; padding: 7px 16px 28px; }
+    .detail-record-heading { padding: 10px 5px 12px; }
+    .detail-record-heading h1 { margin: 0; color: #20232c; font-size: 18px; line-height: 1.45; }
+    .detail-record-date { margin: 4px 0 15px; color: #9699a2; font-size: 12px; }
+    .detail-record-info { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: #2d3038; font-size: 14px; }
+    .detail-record-info .owner { display: inline-flex; align-items: center; gap: 6px; }
+    .detail-record-info .owner i { width: 15px; height: 15px; color: var(--blue); }
+    .detail-record-info .distance { display: inline-flex; align-items: center; gap: 6px; color: #3c4149; font-size: 13px; font-weight: 650; }
+    .detail-record-info .distance i { width: 16px; height: 16px; color: #ff7479; fill: #ff7479; }
+    .detail-ecg-card, .detail-analysis-card { margin-bottom: 12px; padding: 14px; background: var(--surface); border-radius: 19px; box-shadow: 0 8px 18px rgba(65,58,85,0.07); }
+    .detail-ecg-top, .detail-analysis-top { display: flex; align-items: center; justify-content: space-between; gap: 9px; }
+    .detail-ecg-top { color: #3d414b; font-size: 13px; }
+    .detail-ecg-top strong { color: #242830; font-weight: 750; }
+    .detail-save { padding: 0; border: 0; color: #609ce5; background: transparent; font-size: 12px; }
+    .detail-ecg-wave { position: relative; margin-top: 9px; }
+    .detail-ecg-wave .wave-canvas { height: 135px; border-radius: 0; background: #fff; }
+    .detail-wave-footer { display:flex; align-items:center; justify-content:space-between; gap:8px; padding-top:8px; color:#989ba5; font-size:11px; }.detail-wave-footer strong { margin-left:2px; color:inherit; font-weight:400; }
+    .detail-expand { position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; display: grid; place-items: center; border: 0; color: #555a63; background: rgba(255,255,255,0.78); }
+    .detail-expand i { width: 17px; height: 17px; }
+    .detail-analysis-card h3 { margin: 0; color: #2c3038; font-size: 16px; }
+    .member-mini { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border: 1px solid #b8d4ff; border-radius: 99px; color: #6c9cf0; background: #f3f8ff; font-size: 11px; font-weight: 700; }
+    .member-mini i { width: 14px; height: 14px; }
+    .detail-conclusion { margin: 13px 0 7px; padding: 12px; color: #3e414a; background: #f4f4f8; border-radius: 12px; font-size: 13px; line-height: 1.55; }
+    .detail-metric { min-height: 34px; display: flex; align-items: center; justify-content: space-between; gap: 12px; color: #383c46; font-size: 13px; }
+    .detail-view-more { width: 100%; min-height: 42px; margin-top: 7px; border: 0; border-top: 1px solid #f0f1f3; color: #6b9ef0; background: transparent; font-size: 14px; font-weight: 700; }
+    .detail-doctor-card { display: grid; grid-template-columns: minmax(0, 1fr) 108px; gap: 10px; min-height: 164px; margin-top: 2px; padding: 16px; overflow: hidden; background: var(--surface); border-radius: 19px; box-shadow: 0 8px 18px rgba(65,58,85,0.06); }
+    .detail-doctor-copy { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; }
+    .detail-doctor-copy h3 { margin: 0; color: #2c3038; font-size: 16px; line-height: 1.35; }
+    .detail-doctor-copy p { margin: 8px 0 14px; color: #8d919a; font-size: 12px; line-height: 1.55; }
+    .doctor-entry { min-height: 35px; padding: 0 15px; margin-top: auto; border: 0; border-radius: 18px; color: #fff; background: #6ca9f5; font-size: 13px; font-weight: 700; }
+    .doctor-art { position: relative; align-self: end; height: 120px; overflow: hidden; }
+    .doctor-art::before { content: ''; position: absolute; right: -18px; bottom: -10px; width: 123px; height: 103px; border-radius: 60px 60px 12px 12px; background: #e8f3ff; }
+    .doctor-coat { position: absolute; z-index: 2; right: 13px; bottom: 3px; width: 72px; height: 68px; border-radius: 38px 38px 12px 12px; background: #72afe8; }
+    .doctor-face { position: absolute; z-index: 4; right: 34px; bottom: 56px; width: 31px; height: 38px; border-radius: 48% 48% 45% 45%; background: #ffd9bd; }
+    .doctor-hair { position: absolute; z-index: 5; right: 29px; bottom: 82px; width: 42px; height: 28px; border-radius: 46% 52% 38% 42%; background: #5964bb; }
+    .doctor-book { position: absolute; z-index: 5; right: 38px; bottom: 27px; width: 30px; height: 37px; border: 3px solid #f56e76; border-radius: 4px; background: #ff9aa0; transform: rotate(-8deg); }
+    .doctor-art i { position: absolute; z-index: 6; right: 15px; bottom: 22px; width: 28px; height: 28px; color: #fff; }
+    .detail-medical-disclaimer { margin: 12px 3px 0; color: #a2a5ad; font-size: 11px; line-height: 1.65; }
+
+    .modal-backdrop { position: absolute; inset: 0; z-index: 40; display: none; align-items: center; justify-content: center; padding: 20px; background: rgba(31,29,41,0.48); }
+    .modal-backdrop.open { display: flex; }
+    .modal { width:100%; max-width:328px; padding:23px 20px 18px; background:#fff; border-radius:20px; box-shadow:0 18px 40px rgba(28,26,39,.22); animation:pop .2s ease-out; }
+    @keyframes pop { from { opacity:0; transform:scale(.94); } to { opacity:1; transform:scale(1); } }
+    .modal-handle { display:none; }
+    .modal h2 { margin:0; text-align:center; font-size:19px; }
+    .modal p { margin:10px 0 19px; color:#656875; text-align:center; font-size:14px; line-height:1.6; }
+    .modal-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 4px 0 14px; }
+    .modal-option { min-height: 44px; border: 1px solid #e4e5ec; border-radius: 12px; color: #50535f; background: #fbfbfd; font-size: 13px; font-weight: 650; }
+    .modal-option:hover { border-color: #a8cff2; color: var(--blue-deep); background: #f3f9ff; }.modal-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; }.modal-actions button { min-height:44px; border-radius:13px; }.modal-actions .primary-button { width:100%; }.modal-actions .text-button { margin:0 !important; color:#626773; background:#f1f2f6; }.modal-actions:has(#modalPrimary[hidden]) { grid-template-columns:1fr; }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    body.card-preview { display: block; min-height: 0; background: #f6f5fb; }
+    body.card-preview .phone { width: 100%; max-width: none; height: auto; min-height: 0; overflow: visible; background: transparent; box-shadow: none; }
+    body.card-preview .status-bar,
+    body.card-preview .app-header,
+    body.card-preview .composer-area,
+    body.card-preview .bottom-nav,
+    body.card-preview .overlay,
+    body.card-preview:not(.drawer-preview) .record-drawer,
+    body.card-preview .modal-backdrop:not(.open) { display: none; }
+    body.task-processing-lock .bottom-nav,
+    body.task-processing-lock .composer-area { pointer-events:none; opacity:.35; }
+    body.card-preview .chat-scroll { height: auto; flex: none; overflow: visible; padding: 0; }
+    body.card-preview.drawer-preview .phone { height: 570px; min-height: 570px; }
+    body.card-preview .workflow-wrap { margin: 0; }
+    body.card-preview .workflow-card,
+    body.card-preview .summary-card { width: 100%; }
+    body.dialog-preview { display:block; min-height:0; background:#f6f5fb; }
+    body.dialog-preview .phone { width:100%; max-width:none; height:480px; min-height:480px; background:#f6f5fb; box-shadow:none; }
+    body.dialog-preview .status-bar,
+    body.dialog-preview .app-header,
+    body.dialog-preview .chat-scroll,
+    body.dialog-preview .composer-area,
+    body.dialog-preview .bottom-nav,
+    body.dialog-preview .toast,
+    body.dialog-preview .overlay,
+    body.dialog-preview .record-drawer { display:none !important; }
+    /* Used by device-management.html. Keep the binding conversation identical to the main AI flow. */
+    body.drawer-embed { display: block; min-height: 100dvh; background: var(--app-bg); }
+    body.drawer-embed .phone { width: 100%; max-width: none; height: 100dvh; min-height: 0; box-shadow: none; }
+    body.drawer-embed .status-bar,
+    body.drawer-embed .app-header,
+    body.drawer-embed .bottom-nav,
+    body.drawer-embed .workflow-shortcuts { display:none !important; }
+    .device-type-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}.device-type-tile{min-width:0;min-height:0;display:flex;flex-direction:column;gap:5px;padding:7px 7px 8px;border:1px solid #dfe5ec;border-radius:16px;color:var(--ink);background:#fff;text-align:left}.device-type-tile:hover{border-color:#8fc1f3;background:#f8fbff}.device-type-tile:focus-visible,.device-type-button:focus-visible{outline:3px solid rgba(63,145,220,.3);outline-offset:2px}.device-visual{position:relative;width:100%;height:74px;display:grid;place-items:center;overflow:hidden;border-radius:12px;background:#f1f6fb}.device-visual.compact{width:100%;height:auto;min-height:130px;flex:0 0 auto;background:#f4f8fc}.device-product-image{width:100%;height:100%;display:block;object-fit:contain}.device-product-image.real-photo{object-fit:cover;object-position:center 58%}.device-shape{position:relative;display:block}.device-shape.card{width:92px;height:45px;border-radius:9px;background:#34383f;box-shadow:0 7px 13px rgba(40,45,53,.16)}.device-shape.card:before{content:"";position:absolute;left:50%;top:50%;width:38px;height:38px;border:2px solid #dbe1e8;border-radius:50%;background:#25292f;transform:translate(-50%,-50%)}.device-shape.card:after{content:"";position:absolute;left:50%;top:8px;width:4px;height:4px;border-radius:50%;background:#7fd391;transform:translateX(-50%)}.device-visual-badge{position:absolute;right:7px;bottom:7px;padding:3px 6px;border-radius:7px;color:#397fbd;background:rgba(255,255,255,.94);font-size:10px;font-weight:800}.device-type-copy{width:100%;min-width:0;display:block;text-align:center}.device-type-copy strong,.device-type-copy small{display:block}.device-type-copy strong{overflow:hidden;font-size:13px;line-height:1.35;text-overflow:ellipsis;white-space:nowrap}.device-type-copy small{margin-top:3px;color:var(--muted);font-size:11px}.device-type-list{display:grid;gap:9px;margin-top:10px}.device-type-button{width:100%;min-height:65px;display:flex;align-items:center;gap:11px;padding:10px;border:1px solid #e4e5ec;border-radius:15px;color:var(--ink);background:#fff;text-align:left}.workflow-body>.device-type-button:only-of-type{width:100%!important;min-width:0;margin:0!important}.device-type-button:hover{border-color:#8fc1f3;background:#f7fbff}.device-type-button:disabled{background:#f5f5f7}.device-type-button .device-icon{flex:0 0 auto}.device-type-button span:nth-child(2){min-width:0;flex:1}.device-type-button strong,.device-type-button small{display:block}.device-type-button small{margin-top:4px;color:var(--muted);font-size:12px}.device-type-button b{color:var(--blue-deep);font-size:12px}.device-type-button>i{width:18px;color:#b6b8c2}.guide-figure{margin:8px 0 12px;overflow:hidden;border:1px solid #e5ebf2;border-radius:16px;background:#f4f8fc}.guide-figure img{width:100%;height:auto;display:block}.patch-guide{display:flex;align-items:center;gap:14px;margin:8px 0 12px;padding:13px;border-radius:16px;background:#f2f9ff}.patch-guide strong{display:block;font-size:14px}.patch-guide p{margin:5px 0 0;color:var(--muted);font-size:12px;line-height:1.5}.connection-complete-list{margin-top:0}.connection-complete-list li{position:relative;padding-left:2px}.connection-complete-list li:not(:last-child)::after{position:absolute;left:8px;top:27px;width:1px;height:17px;background:#79b7ed;content:""}.connection-complete-list li.done i{color:#68ace8;fill:#68ace8;stroke:#fff}.connection-countdown{display:grid;justify-items:center;padding:8px 0 3px;text-align:center}.connection-countdown-ring{width:84px;height:84px;display:grid;place-items:center;border:3px solid #5eafea;border-radius:50%;color:#303744;font-size:28px;font-variant-numeric:tabular-nums}.connection-countdown p{margin:11px 0 0;color:#5eafea;font-size:12px}.duration-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:9px}.duration-option{min-height:48px;padding:5px;border:1px solid #dedfe7;border-radius:13px;color:#60636f;background:#fff;font-size:13px;font-weight:700}.duration-option.selected{color:var(--blue-deep);border-color:var(--blue);background:#edf6ff}.duration-option small{display:block;margin-top:2px;color:#9a9ca5;font-size:9px}.dynamic-panel{padding:13px;border:1px solid #e4e8ef;border-radius:17px;background:#fbfcff}.dynamic-top{display:flex;align-items:center;justify-content:space-between;gap:10px}.dynamic-top strong{font-size:25px}.dynamic-top small{display:block;margin-top:4px;color:var(--muted)}.dynamic-battery{color:#4e86bf;font-size:12px}.dynamic-wave{width:100%;height:104px;margin-top:11px;border-radius:12px;background:#23262d}.dynamic-info{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}.dynamic-info span{padding:8px;border-radius:10px;color:#666a75;background:#f2f4f8;font-size:11px}.dynamic-info strong{display:block;margin-top:3px;color:#282b33;font-size:13px}.dynamic-measurement-panel .metric-unit{margin-left:3px;color:#4b4f59;font-size:13px}.dynamic-wave-wrap{position:relative;overflow:hidden;border:1px solid #e5edf4;border-radius:2px;background-color:#fff;background-image:linear-gradient(rgba(118,187,236,.13) 1px,transparent 1px),linear-gradient(90deg,rgba(118,187,236,.13) 1px,transparent 1px);background-size:10px 10px}.dynamic-measurement-panel .dynamic-wave{height:118px;margin:0;border-radius:0;background:transparent}.dynamic-wave-battery,.dynamic-wave-gain{position:absolute;z-index:1;top:8px;display:flex;align-items:center;gap:3px;padding:4px 7px;border-radius:13px;color:#858b94;background:rgba(255,255,255,.86);font-size:11px}.dynamic-wave-battery{left:8px}.dynamic-wave-gain{right:8px;color:#555a64;background:rgba(238,239,241,.9)}.dynamic-wave-battery i,.dynamic-wave-gain i{width:13px;height:13px}.dynamic-measure-footer{display:grid;grid-template-columns:1.25fr .72fr 1fr;align-items:center;gap:5px;margin-top:9px;color:#8b9099;font-size:10px;white-space:nowrap}.dynamic-measure-footer span:nth-child(2){text-align:center}.dynamic-measure-footer span:last-child{text-align:right}.pending-record-summary{display:flex;align-items:center;gap:10px;padding:10px;border-radius:14px;background:#fbfcff}.pending-record-icon{width:42px;height:42px;flex:0 0 auto;display:grid;place-items:center;border-radius:12px;color:#ea8a3c;background:#fff2e5}.pending-record-icon i{width:22px;height:22px}.pending-record-copy{min-width:0;display:block}.pending-record-copy strong,.pending-record-copy small{display:block}.pending-record-copy strong{color:#252a34;font-size:13px}.pending-record-copy small{margin-top:3px;color:#777d88;font-size:11px}.progress-shell{height:9px;overflow:hidden;margin:15px 0 8px;border-radius:6px;background:#e7e9ee}.progress-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,#65aef1,#9d82f4);transition:width .3s ease}.progress-copy{display:flex;justify-content:space-between;color:var(--muted);font-size:12px}.analysis-metrics{display:grid;gap:8px;margin-top:10px}.analysis-metric{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 12px;border-radius:13px;background:#f7f8fb}.analysis-metric span{color:#60636e;font-size:13px}.analysis-metric strong{max-width:55%;color:#2c3038;text-align:right;font-size:13px}.analysis-actions{display:grid;gap:8px;margin-top:12px}.drawer-embed .chat-scroll{padding-bottom:30px}.drawer-embed .composer,.drawer-embed .bottom-nav{display:none!important}
+    body.drawer-embed .composer-area { display:block !important; bottom:0; padding:0 12px 12px; }
+    body.drawer-embed .chat-scroll { padding:6px 16px 142px; scroll-padding-bottom:142px; }
+    .dynamic-info span:last-child { grid-column: 1 / -1; }
+    .dynamic-info.disconnected-info span:last-child { grid-column: auto; }
+    .dynamic-measure-footer { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .dynamic-measure-footer span:nth-child(2) { text-align: right; }
+    @media (max-width: 375px) { .phone { height: 100dvh; min-height: 100dvh; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; scroll-behavior: auto !important; } }
+    /* TE-5100Y-C guide: the long patch body carries the two contact points and
+       the round sensor end shown in the quick-operation guide. */
+    .device-shape.patch:before { left: auto; right: 4px; }
+    .device-shape.patch:after { left: 27px; right: auto; width: 8px; height: 8px; background: #e1a15d; box-shadow: 17px 0 0 #e1a15d; }
+    .patch-guide-steps { display: grid; gap: 7px; margin: 10px 0 12px; }
+    .patch-guide-step { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; border-radius: 11px; color: #5e6370; background: #f8f9fc; font-size: 12px; line-height: 1.45; }
+    .patch-guide-step b { width: 18px; height: 18px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 50%; color: #fff; background: var(--blue); font-size: 10px; }
+    .device-visual .device-product-image.real-photo { position:absolute; top:9px; left:8px; width:calc(100% - 16px); height:calc(100% - 18px); object-position:center 60%; }
+    .device-end { display:flex; align-items:center; justify-content:flex-end; gap:3px; white-space:nowrap; }
+    .progress-copy + .notice { margin-top:10px; }
+    .workflow-body > .notice + .notice { margin-top:8px; }
+  </style>
+</head>
+<body>
+  <main class="phone ecg-shell" aria-label="心脏加AI健康管家">
+    <div class="status-bar" aria-label="手机状态栏">
+      <span>10:30</span>
+      <span class="status-icons" aria-hidden="true"><i data-lucide="signal-high"></i><i data-lucide="wifi"></i><span class="battery"></span></span>
+    </div>
+    <header class="app-header">
+      <div class="brand-lockup"><span class="brand-orb"><img src="assets/dongdong.png" alt="" /></span><strong>AI 健康管家</strong></div>
+    </header>
+
+    <section id="chat" class="chat-scroll" aria-live="polite" aria-label="与咚咚的健康会话"></section>
+
+    <section class="composer-area" aria-label="消息输入区">
+      <div class="workflow-shortcuts" aria-label="健康流程快捷入口"><button id="dynamicProgressShortcut" class="workflow-shortcut workflow-progress-shortcut" type="button" aria-label="查看动态心电进度" hidden><i data-lucide="heart-pulse"></i></button><button class="workflow-shortcut" type="button" onclick="beginBinding()">设备绑定</button><button class="workflow-shortcut" type="button" onclick="beginMeasurement()">心电测量</button></div>
+      <div class="composer">
+        <label class="sr-only" for="chatInput">输入健康问题</label>
+        <textarea id="chatInput" class="chat-input" rows="1" placeholder="有问题尽管问我吧~"></textarea>
+        <button class="icon-button voice-button" type="button" aria-label="语音输入" onclick="showToast('语音输入暂未开放')"><i data-lucide="audio-lines"></i></button>
+        <button class="icon-button plus-button" type="button" aria-label="更多功能"><i data-lucide="plus"></i></button>
+        <button class="icon-button send-button" type="button" aria-label="发送消息" onclick="sendFreeText()"><i data-lucide="arrow-up"></i></button>
+      </div>
+    </section>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <section id="watchScanner" class="watch-scanner" role="dialog" aria-modal="true" aria-label="扫描手表二维码" aria-hidden="true">
+      <video id="watchScannerVideo" autoplay muted playsinline aria-hidden="true"></video>
+      <header class="watch-scanner-header"><strong>扫描二维码</strong><button class="watch-scanner-close" type="button" aria-label="关闭扫码" onclick="closeWatchScannerV2()"><i data-lucide="x"></i></button></header>
+      <div class="watch-scanner-center"><div class="watch-scanner-frame" aria-hidden="true"></div><p>将手表屏幕上的二维码对准扫描框</p></div>
+    </section>
+
+    <section id="detailOverlay" class="overlay" aria-label="心电详情" aria-hidden="true">
+      <div class="detail-status" aria-label="手机状态栏"><span>10:30</span><span class="status-icons" aria-hidden="true"><i data-lucide="signal-high"></i><i data-lucide="wifi"></i><span class="battery"></span></span></div>
+      <header class="detail-header">
+        <button id="detailBack" class="detail-back" type="button" aria-label="返回会话" onclick="closeDetail()"><i data-lucide="arrow-left"></i></button>
+        <h2>心电图</h2>
+        <span style="width:36px" aria-hidden="true"></span>
+      </header>
+      <div class="detail-scroll">
+        <section class="detail-record-heading">
+          <h1 id="detailRecordTitle">窦性心律，本次监测未见明显异常</h1>
+          <p id="detailRecordDate" class="detail-record-date">2026年7月12日　10:42</p>
+          <div class="detail-record-info"><span class="owner">归属：本人 <i data-lucide="pencil-line"></i></span><span class="distance"><i data-lucide="flag"></i>1.23 米</span></div>
+        </section>
+        <article class="detail-ecg-card">
+          <div class="detail-ecg-top"><span><strong>心电图监测</strong>　<span id="detailRateText">平均 72 次/分</span></span><button class="detail-save" type="button" onclick="showToast('已保存心电图')">保存心电图</button></div>
+          <div class="detail-ecg-wave"><canvas id="detailWave" class="wave-canvas" width="700" height="260" role="img" aria-label="本次心电波形图"></canvas><button class="detail-expand" type="button" aria-label="放大心电图" onclick="showToast('暂不支持放大查看')"><i data-lucide="maximize-2"></i></button></div>
+          <div class="detail-wave-footer"><span>测量时长<strong id="detailDurationText">30 秒</strong></span><span id="detailSourceTag" class="source-tag"><i data-lucide="credit-card"></i>数据来源：心电卡片</span></div>
+        </article>
+        <article class="detail-analysis-card">
+          <div class="detail-analysis-top"><h3>极速心电图(ECG)分析</h3><span class="member-mini"><i data-lucide="crown"></i>会员专享</span></div>
+          <p class="detail-conclusion">窦性心律，本次心电监测未见明显异常。</p>
+          <div class="detail-metric"><span>心率变异性指数</span><span class="metric-badge high">高</span></div>
+          <div class="detail-metric"><span>心脏疾病风险评估</span><span class="metric-badge low risk-summary-badge" title="低风险">低风险</span></div>
+          <div class="detail-metric"><span>精神压力指数</span><span class="metric-badge mild">轻度</span></div>
+          <div class="detail-metric"><span>疲劳指数</span><span class="metric-badge medium">中度</span></div>
+          <button class="detail-view-more" type="button" onclick="showToast('暂无更多详细内容')">查看详情</button>
+        </article>
+        <article class="detail-doctor-card">
+          <div class="detail-doctor-copy"><h3>心电图(ECG)深度解读</h3><p>国家远程医疗与互联网医学中心<br>提供解读服务</p><button class="doctor-entry" type="button" onclick="showToast('医生解读服务为独立付费服务')">医生解读</button></div>
+          <div class="doctor-art" aria-hidden="true"><span class="doctor-coat"></span><span class="doctor-face"></span><span class="doctor-hair"></span><span class="doctor-book"></span><i data-lucide="stethoscope"></i></div>
+        </article>
+        <p class="detail-medical-disclaimer">以上分析结果仅供参考，不作为医疗诊断和治疗的依据。在未咨询专业医生之前，请勿改变用药，请勿采取临床措施。如您对分析结果存在任何异议，建议咨询专业医生或者前往医院就诊！</p>
+      </div>
+    </section>
+
+    <section id="recordDrawer" class="record-drawer" aria-label="心电记录列表" aria-hidden="true" onclick="recordDrawerBackdropClose(event)">
+      <section class="record-drawer-sheet" role="dialog" aria-modal="true" aria-labelledby="recordDrawerTitle">
+        <div class="drawer-handle" aria-hidden="true"></div>
+        <header class="record-drawer-header"><button id="recordFilterTrigger" class="record-filter-trigger" type="button" aria-label="筛选数据来源" aria-expanded="false" onclick="toggleRecordSourceFilter()"><span id="recordFilterCurrent">全部数据</span><i data-lucide="chevron-down"></i></button><h2 id="recordDrawerTitle">心电图记录</h2><button id="recordDrawerClose" class="record-drawer-close" type="button" aria-label="关闭心电记录列表" onclick="closeRecordDrawer()"><i data-lucide="x"></i></button></header>
+        <div class="record-drawer-tools">
+          <nav id="recordStatusTabs" class="record-status-tabs" aria-label="心电记录状态"></nav>
+          <div id="recordFilterMenu" class="record-filter-menu" hidden></div>
+        </div>
+        <div class="record-drawer-scroll"><section id="recordDrawerList" class="record-drawer-list" aria-label="心电记录"></section><section id="recordDrawerEmpty" class="record-drawer-empty" hidden><i data-lucide="inbox"></i><h3>暂无相关记录</h3><p>换个筛选条件试试吧。</p></section></div>
+      </section>
+    </section>
+
+    <div id="modalBackdrop" class="modal-backdrop" aria-hidden="true" onclick="backdropClose(event)">
+      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalCopy">
+        <div class="modal-handle"></div>
+        <h2 id="modalTitle">提示</h2>
+        <p id="modalCopy">请确认是否继续当前操作。</p>
+        <div id="modalOptions" class="modal-options" hidden></div>
+        <div class="modal-actions"><button id="modalSecondary" class="text-button" type="button" onclick="closeModal()">取消</button><button id="modalPrimary" class="primary-button" type="button" onclick="closeModal()">确定</button></div>
+      </section>
+    </div>
+  </main>
+  <a class="prototype-overview-entry" href="watch-flow-overview.html">流程总览</a>
+
+  <script>
+    const state = {
+      deviceBound: false,
+      selectedPerson: '本人',
+      selectedDuration: '30 秒',
+      activeCard: null,
+      activeTimer: null,
+      isMeasuring: false,
+      lastFocus: null,
+      waveformPhase: 0,
+      recordDrawer: { records: [], source: '全部数据', tab: '已解锁' },
+      recordDrawerFocus: null,
+      detailReturnDrawer: false
+    };
+
+    const chat = document.getElementById('chat');
+    const character = 'assets/dongdong.png';
+    const heartRecords = [
+      { id: 'latest', title: '窦性心律', detailTitle: '窦性心律，本次监测未见明显异常', time: '今天 14:03', date: '2026年7月12日　14:03', source: '心电卡片', state: '已分析', unlock: '已解锁', rate: '平均76次/分', duration: '30 秒', kind: 'normal', seed: 8 },
+      { id: 'specified', title: '窦性心律', detailTitle: '窦性心律，本次监测未见明显异常', time: '昨天 09:42', date: '2026年7月11日　09:42', source: 'Apple Watch', state: '已分析', unlock: '已解锁', rate: '平均72次/分', duration: '1 分钟', kind: 'normal', read: true, seed: 48 },
+      { id: 'abnormal', title: '房性早搏', detailTitle: '房性早搏，本次监测建议关注心律变化', time: '7月10日 20:16', date: '2026年7月10日　20:16', source: '心电卡片', state: '已分析', unlock: '已解锁', rate: '平均81次/分', duration: '30 秒', kind: 'abnormal', seed: 91 },
+      { id: 'pending', title: '窦性心律', detailTitle: '窦性心律，等待本次心电分析结果', time: '7月9日 08:26', date: '2026年7月9日　08:26', source: 'Apple Watch', state: '未分析', unlock: '未解锁', rate: '平均70次/分', duration: '1 分钟', kind: 'normal', seed: 124 },
+      { id: 'watch-h1', title: '窦性心律', detailTitle: '窦性心律，本次心电监测未见明显异常', time: '今天 10:42', date: '2026年11月5日　10:42', source: 'HELOWIN WATCH H1', state: '已分析', unlock: '已解锁', rate: '平均73次/分', duration: '30 秒', kind: 'normal', seed: 31 }
+    ];
+
+    function refreshIcons() {
+      if (window.lucide) window.lucide.createIcons({ attrs: { 'stroke-width': 2 } });
+    }
+
+    function scrollChat() {
+      const scrollToLatest = () => chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' });
+      requestAnimationFrame(() => {
+        scrollToLatest();
+        setTimeout(scrollToLatest, 80);
+      });
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('visible');
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => toast.classList.remove('visible'), 2600);
+    }
+
+    function appendUser(text) {
+      const node = document.createElement('article');
+      node.className = 'message user';
+      node.innerHTML = `<div class="bubble user-bubble">${text}</div>`;
+      chat.append(node);
+      scrollChat();
+    }
+
+    function appendAssistant(text) {
+      const node = document.createElement('article');
+      node.className = 'message assistant';
+      node.innerHTML = `<div class="assistant-name"><img class="tiny-avatar" src="${character}" alt="" />咚咚</div><div class="bubble assistant-bubble">${text}</div>`;
+      chat.append(node);
+      scrollChat();
+    }
+
+    function recordSourceIcon(source) {
+      return source === 'Apple Watch' ? 'watch' : 'credit-card';
+    }
+
+    function drawRecordWave(canvas, seed) {
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const width = canvas.width;
+      const height = canvas.height;
+      ctx.clearRect(0, 0, width, height);
+      ctx.strokeStyle = '#d7d7dc';
+      ctx.lineWidth = 1;
+      [width / 3, width * 2 / 3].forEach(x => { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke(); });
+      ctx.strokeStyle = '#f23a3d';
+      ctx.lineWidth = 3;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      for (let x = 0; x <= width; x += 3) {
+        const phase = (x + seed) % 190;
+        let y = height / 2;
+        if (phase > 65 && phase < 76) y -= (phase - 65) * 2;
+        else if (phase >= 76 && phase < 83) y += 32 - (phase - 76) * 7;
+        else if (phase >= 83 && phase < 96) y -= 12 - (phase - 83);
+        else if (phase >= 105 && phase < 124) y -= Math.sin((phase - 105) / 19 * Math.PI) * 8;
+        if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+
+    function appendRecordSummaryCard(record) {
+      const wrap = document.createElement('section');
+      wrap.className = 'workflow-wrap';
+      wrap.innerHTML = `
+        <article class="summary-card" aria-label="心电分析摘要，点击查看详情">
+          <div class="summary-top"><div class="summary-diagnosis"><h3>${record.detailTitle}</h3></div><span class="summary-time">${record.time}</span></div>
+          <div class="summary-meta"><span class="summary-meta-copy">心电图监测　${record.rate}</span></div>
+          <div class="summary-wave"><canvas class="wave-canvas" width="700" height="140" role="img" aria-label="本次心电波形缩略图"></canvas></div>
+          <div class="summary-data-line"><span>测量时长<strong>${record.duration}</strong></span><span class="source-tag"><i data-lucide="${recordSourceIcon(record.source)}"></i>数据来源：${record.source}</span></div>
+          <div class="summary-metrics">
+            <div class="summary-metric"><span>心率变异性指数</span><span class="metric-badge high">高</span></div>
+            <div class="summary-metric"><span>心脏疾病风险评估</span><span class="metric-badge low risk-summary-badge" title="低风险">低风险</span></div>
+            <div class="summary-metric"><span>精神压力指数</span><span class="metric-badge mild">轻度</span></div>
+            <div class="summary-metric"><span>疲劳指数</span><span class="metric-badge medium">中度</span></div>
+          </div>
+          <button class="summary-detail-button" type="button">查看详情</button>
+          <p class="ai-disclaimer">内容由AI生成</p>
+        </article>`;
+      const detail = () => openRecordDetailById(record.id);
+      wrap.querySelector('.summary-card').addEventListener('click', detail);
+      wrap.querySelector('.summary-detail-button').addEventListener('click', event => {
+        event.stopPropagation();
+        detail();
+      });
+      chat.append(wrap);
+      drawSummaryWave(wrap.querySelector('.wave-canvas'), record.seed);
+      refreshIcons();
+      scrollChat();
+      return wrap;
+    }
+
+    function appendRecordEntryCard(type, options = {}) {
+      const record = options.record;
+      if (type === 'direct') return appendRecordSummaryCard(record);
+      const wrap = document.createElement('section');
+      wrap.className = 'workflow-wrap record-list-entry';
+      wrap.innerHTML = `<button class="record-list-trigger" type="button" data-record-entry="${type}">查看详情</button>`;
+      wrap.querySelector('[data-record-entry]').addEventListener('click', () => {
+        openRecordDrawer(type === 'filtered' ? options.records : heartRecords);
+      });
+      chat.append(wrap);
+      scrollChat();
+      return wrap;
+    }
+
+    function openRecordDrawer(records, returnFromDetail = false) {
+      if (!returnFromDetail) state.recordDrawerFocus = document.activeElement;
+      if (!returnFromDetail) {
+        state.recordDrawer.records = records.slice();
+        state.recordDrawer.source = '全部数据';
+        state.recordDrawer.tab = '已解锁';
+      }
+      const drawer = document.getElementById('recordDrawer');
+      drawer.classList.add('open');
+      drawer.setAttribute('aria-hidden', 'false');
+      renderRecordDrawer();
+      if (!returnFromDetail) document.getElementById('recordDrawerClose').focus();
+    }
+
+    function closeRecordDrawer(restoreFocus = true) {
+      const drawer = document.getElementById('recordDrawer');
+      drawer.classList.remove('open');
+      drawer.setAttribute('aria-hidden', 'true');
+      document.getElementById('recordFilterMenu').hidden = true;
+      document.getElementById('recordFilterTrigger').setAttribute('aria-expanded', 'false');
+      if (restoreFocus && state.recordDrawerFocus) state.recordDrawerFocus.focus();
+    }
+
+    function recordDrawerBackdropClose(event) {
+      if (event.target === event.currentTarget) closeRecordDrawer();
+    }
+
+    function toggleRecordSourceFilter() {
+      const menu = document.getElementById('recordFilterMenu');
+      const nextOpen = menu.hidden;
+      menu.hidden = !nextOpen;
+      document.getElementById('recordFilterTrigger').setAttribute('aria-expanded', String(nextOpen));
+    }
+
+    function setRecordSource(source) {
+      state.recordDrawer.source = source;
+      document.getElementById('recordFilterMenu').hidden = true;
+      document.getElementById('recordFilterTrigger').setAttribute('aria-expanded', 'false');
+      renderRecordDrawer();
+    }
+
+    function setRecordTab(tab) {
+      state.recordDrawer.tab = tab;
+      renderRecordDrawer();
+    }
+
+    function renderRecordDrawer() {
+      const tabs = ['已解锁', '未解锁'];
+      document.getElementById('recordStatusTabs').innerHTML = tabs.map(tab => `<button class="record-status-tab ${tab === state.recordDrawer.tab ? 'active' : ''}" type="button" onclick="setRecordTab('${tab}')">${tab}</button>`).join('');
+      document.getElementById('recordFilterMenu').innerHTML = ['全部数据', 'HELOWIN WATCH H1', '心电卡片', 'Apple Watch'].map(source => `<button class="record-filter-option ${source === state.recordDrawer.source ? 'active' : ''}" type="button" onclick="setRecordSource('${source}')">${source}</button>`).join('');
+      document.getElementById('recordFilterCurrent').textContent = state.recordDrawer.source;
+      const records = state.recordDrawer.records.filter(record => record.unlock === state.recordDrawer.tab && (state.recordDrawer.source === '全部数据' || record.source === state.recordDrawer.source));
+      const list = document.getElementById('recordDrawerList');
+      list.innerHTML = records.map(record => `
+        <button class="drawer-record" type="button" data-record-id="${record.id}">
+          <div class="drawer-record-top"><h3 class="drawer-record-title">${record.title}</h3><span class="drawer-record-time">${record.time}</span></div>
+          <div class="drawer-record-meta"><span>心电图监测　${record.rate}</span>${record.read ? '<span class="drawer-record-tag read">已解读</span>' : ''}<span class="drawer-record-tag">${record.unlock}</span></div>
+          <canvas class="drawer-record-wave" width="640" height="180" data-seed="${record.seed}" aria-label="心电波形图"></canvas>
+          <div class="drawer-record-footer"><span>测量时长 ${record.duration}</span><span class="source-tag"><i data-lucide="${recordSourceIcon(record.source)}"></i>数据来源：${record.source}</span></div>
+        </button>`).join('');
+      list.querySelectorAll('[data-record-id]').forEach(button => button.addEventListener('click', () => openRecordDetailById(button.dataset.recordId)));
+      document.getElementById('recordDrawerEmpty').hidden = Boolean(records.length);
+      refreshIcons();
+      list.querySelectorAll('canvas').forEach(canvas => drawRecordWave(canvas, Number(canvas.dataset.seed)));
+    }
+
+    function openRecordDetailById(id) {
+      const record = heartRecords.find(item => item.id === id);
+      if (!record) return;
+      const openedFromDrawer = document.getElementById('recordDrawer').classList.contains('open');
+      state.detailReturnDrawer = openedFromDrawer;
+      if (openedFromDrawer) closeRecordDrawer(false);
+      openDetail(record);
+    }
+
+    function resolveRecordQuery(text) {
+      if (/(Apple\s*Watch|如何|怎么|测量|授权|同步)/i.test(text)) return false;
+      if (!/(心电记录|心电报告|最新报告|最新.*心电|报告|查看.*心电|全部.*心电|所有.*心电|正常.*心电|异常.*心电)/.test(text)) return false;
+      if (/最新/.test(text)) {
+        appendAssistant('找到啦，这是你最新的一份心电报告。');
+        appendRecordEntryCard('direct', { record: heartRecords[0] });
+        return true;
+      }
+      if (/无匹配|找不到符合|没有符合/.test(text)) {
+        appendAssistant('暂时没有找到符合“筛选条件”的心电记录，你可以查看全部记录。');
+        appendRecordEntryCard('empty');
+        return true;
+      }
+      if (/指定|7月11日.*09[:：]?42|昨天.*报告/.test(text)) {
+        appendAssistant('找到啦，这是你要查看的心电报告。');
+        appendRecordEntryCard('direct', { record: heartRecords[1] });
+        return true;
+      }
+      if (/正常|异常|日期|今天|昨天|7月\d+日|筛选/.test(text)) {
+        const condition = /异常/.test(text) ? '异常类型' : /正常/.test(text) ? '正常类型' : /昨天/.test(text) ? '昨天' : /今天/.test(text) ? '今天' : '日期';
+        let records = heartRecords.filter(record => record.state === '已分析');
+        if (/异常/.test(text)) records = records.filter(record => record.kind === 'abnormal');
+        if (/正常/.test(text)) records = records.filter(record => record.kind === 'normal');
+        if (/昨天/.test(text)) records = records.filter(record => record.time.includes('昨天'));
+        if (/今天/.test(text)) records = records.filter(record => record.time.includes('今天'));
+        if (!records.length) {
+          appendAssistant(`暂时没有找到符合“${condition}”的心电记录，你可以查看全部记录。`);
+          appendRecordEntryCard('empty');
+        } else {
+          appendAssistant(`找到 ${records.length} 条符合“${condition}”的心电记录，你可以点击下方按钮查看。`);
+          appendRecordEntryCard('filtered', { records, condition });
+        }
+        return true;
+      }
+      appendAssistant('好哒，你可以点击下方按钮查看全部心电记录。');
+      appendRecordEntryCard('all');
+      return true;
+    }
+
+    function createCard(title, copy, icon) {
+      const wrap = document.createElement('section');
+      wrap.className = 'workflow-wrap';
+      const card = document.createElement('article');
+      card.className = 'workflow-card';
+      card.innerHTML = `<div class="workflow-head"><span class="head-icon"><i data-lucide="${icon}"></i></span><div><h3 class="workflow-title">${title}</h3></div><span class="workflow-state">进行中</span></div><div class="workflow-body"></div>`;
+      wrap.append(card);
+      chat.append(wrap);
+      setActiveCard(card);
+      refreshIcons();
+      scrollChat();
+      return card;
+    }
+
+    function setActiveCard(card) {
+      if (state.activeCard && state.activeCard !== card) lockCard(state.activeCard);
+      state.activeCard = card;
+    }
+
+    function lockCard(card, label = '已完成') {
+      if (!card) return;
+      card.classList.add('locked');
+      card.querySelectorAll('button, input').forEach(el => { el.disabled = true; });
+      const labelNode = card.querySelector('.workflow-state');
+      if (labelNode) labelNode.textContent = label;
+    }
+
+    function completeActive(label) {
+      lockCard(state.activeCard, label);
+      state.activeCard = null;
+    }
+
+    function setCardBody(card, html) {
+      card.querySelector('.workflow-body').innerHTML = html;
+      refreshIcons();
+      scrollChat();
+    }
+
+    function searchingCardHtml() {
+      return `<div class="searching"><span class="spinner" aria-hidden="true"></span><span>搜索中，请稍候…</span></div><button class="text-button" type="button" onclick="stopSearch()">停止搜索</button>`;
+    }
+
+    function setCardPresentation(card, title, copy, icon, status = '进行中', variant = '') {
+      card.classList.toggle('error-state', variant === 'error');
+      card.querySelector('.head-icon').innerHTML = `<i data-lucide="${icon}"></i>`;
+      card.querySelector('.workflow-title').textContent = title;
+      card.querySelector('.workflow-state').textContent = status;
+      refreshIcons();
+    }
+
+    function clearActiveTimer() {
+      if (state.activeTimer) clearInterval(state.activeTimer);
+      state.activeTimer = null;
+    }
+
+    function bindingPowerGuideHtml() {
+      return `<div class="binding-power-guide" aria-label="心电卡片开机示意图"><div class="power-on-illustration" aria-hidden="true"><i class="power-on-finger left" data-lucide="fingerprint"></i><i class="power-on-finger right" data-lucide="fingerprint"></i><span class="power-on-touch left"></span><span class="power-on-touch right"></span><span class="power-on-device"><span class="power-on-electrode left"></span><span class="power-on-led"></span><span class="power-on-electrode right"></span></span></div></div>`;
+    }
+
+    function buildBindingReadyCard(card) {
+      setCardPresentation(card, '绑定心电卡片', '开启蓝牙后，咚咚会搜索附近可绑定的设备。', 'bluetooth');
+      setCardBody(card, `
+        ${bindingPowerGuideHtml()}
+        <div class="notice"><i data-lucide="hand"></i><span>双手手指分别轻触心电卡片两侧电极。绿色指示灯亮起约 3 秒后熄灭，即表示设备已开机。</span></div>
+        <div class="button-stack"><button class="primary-button" type="button" onclick="startSearch()">开始搜索</button><button class="text-button" type="button" onclick="showBindingHelp()">绑定遇到问题</button></div>
+      `);
+    }
+
+    function renderBindingCompleted(card) {
+      setCardPresentation(card, '心电卡片已绑定', '设备绑定成功，可以开始健康测量。', 'circle-check', '绑定完成');
+      setCardBody(card, `<div class="binding-success"><i data-lucide="circle-check"></i><span>绑定成功，可以开始健康测量。</span></div>`);
+    }
+
+    function renderWelcome() {
+      chat.innerHTML = `
+        <img class="welcome-reference" src="assets/ai-welcome-reference.png" alt="咚咚 AI 健康管家欢迎界面" />
+        `;
+      refreshIcons();
+    }
+
+    function resolveExistingFlow() {
+      if (state.activeCard) {
+        showToast('当前流程还在进行中，已为你定位到最新卡片');
+        state.activeCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return true;
+      }
+      return false;
+    }
+
+    function beginBinding() {
+      if (resolveExistingFlow()) return;
+      appendUser('我要绑定心电卡片');
+      appendAssistant('好呀，咚咚来帮你。请先确保手机蓝牙可用，再将心电卡片靠近手机，按图示开机。');
+      const card = createCard('绑定心电卡片', '开启蓝牙后，咚咚会搜索附近可绑定的设备。', 'bluetooth');
+      buildBindingReadyCard(card);
+    }
+
+    function startSearch() {
+      appendUser('开始搜索心电卡片');
+      completeActive('已开始搜索');
+      appendAssistant('收到，咚咚正在寻找附近的心电卡片。搜索时请保持设备开启，并尽量靠近手机。');
+      const card = createCard('正在搜索设备', '咚咚正在扫描附近可绑定的心电卡片。', 'radar');
+      setCardBody(card, searchingCardHtml());
+      setTimeout(() => showSearchResult(card), 900);
+    }
+
+    function showSearchResult(card) {
+      if (state.activeCard !== card || card.classList.contains('locked')) return;
+      setCardPresentation(card, '发现 1 台可绑定设备', '请选择要绑定的心电卡片。', 'radar', '可选择');
+      setCardBody(card, `
+        <ul class="device-list" aria-label="可绑定设备">
+          <li><button class="device-row" type="button" onclick="bindDevice()"><span class="device-icon"><i data-lucide="credit-card"></i></span><span class="device-meta"><span class="device-name">心电卡片</span><span class="device-sub">SN：ECG-2026-0188 · 电量 82%</span></span><span class="device-end">可绑定<i data-lucide="chevron-right"></i></span></button></li>
+        </ul>
+        <div class="button-row"><button class="secondary-button" type="button" onclick="startSearch()">重新搜索</button><button class="text-button" type="button" onclick="showBindingHelp()">绑定遇到问题</button></div>
+      `);
+    }
+
+    function stopSearch() {
+      openConfirm('停止搜索设备？', '停止后将不再搜索附近的健康设备。', '停止搜索', () => {
+        appendAssistant('已停止搜索。准备好后，咚咚可以继续帮你查找附近的心电卡片。');
+        buildBindingReadyCard(state.activeCard);
+        showToast('已停止搜索设备');
+      });
+    }
+
+    function showBindingHelp() {
+      appendAssistant('没关系。请确认心电卡片已开启、手机蓝牙可用；如果仍然无法搜索，把设备放得更靠近手机后再试一次。');
+    }
+
+    function bindDevice() {
+      appendUser('绑定心电卡片');
+      completeActive('已选择设备');
+      appendAssistant('找到了心电卡片，咚咚正在为你完成绑定，请稍等一下。');
+      const card = createCard('正在绑定设备', '请保持设备开启并靠近手机。', 'link');
+      setCardBody(card, `<div class="searching"><span class="spinner" aria-hidden="true"></span><span>绑定中，请勿关闭页面…</span></div>`);
+      setTimeout(() => {
+        if (state.activeCard !== card) return;
+        state.deviceBound = true;
+        PrototypeState.setHealthDeviceBound('心电卡片', true);
+        if (window.parent !== window && isDrawerEmbed) {
+          window.parent.postMessage({ type: 'ecg-device-bound', device: { id: 'ECG-2026-0188', name: '心电卡片', battery: '82%' } }, '*');
+        }
+        renderBindingCompleted(card);
+        completeActive('绑定完成');
+        appendAssistant('绑定完成啦！现在要不要马上做一次心电测量？');
+        showDeviceChoice(true);
+        showToast('设备已绑定');
+      }, 950);
+    }
+
+    function beginMeasurement() {
+      if (resolveExistingFlow()) return;
+      appendUser('我要开始健康测量');
+      if (!state.deviceBound) {
+        appendAssistant('你还没有可用于测量的健康设备，先绑定一下哦。');
+        const card = createCard('暂无可用于测量的设备', '你还没有绑定健康设备，先绑定一张心电卡片吧。', 'circle-plus');
+        setCardBody(card, `<button class="primary-button" type="button" onclick="bindingFromEmpty()">设备绑定</button>`);
+        return;
+      }
+      appendAssistant('咚咚找到了可用于测量的健康设备，请选择本次要使用的设备。');
+      showDeviceChoice(false);
+    }
+
+    function bindingFromEmpty() {
+      appendUser('我要绑定心电卡片');
+      completeActive('前往绑定');
+      beginBindingFromMessage();
+    }
+
+    function beginBindingFromMessage() {
+      appendAssistant('好呀，咚咚来帮你。请先确保手机蓝牙可用，再将心电卡片靠近手机，按图示开机。');
+      const card = createCard('绑定心电卡片', '开启蓝牙后，咚咚会搜索附近可绑定的设备。', 'bluetooth');
+      buildBindingReadyCard(card);
+    }
+
+    function showDeviceChoice(fromBinding) {
+      const card = createCard('选择测量设备', fromBinding ? '心电卡片已绑定，请选择它开始测量。' : '请选择本次要使用的设备。', 'heart-pulse');
+      setCardBody(card, `
+        <ul class="device-list" aria-label="已绑定设备">
+          <li><button class="device-row" type="button" onclick="selectMeasurementDevice()"><span class="device-icon"><i data-lucide="credit-card"></i></span><span class="device-meta"><span class="device-name">心电卡片</span><span class="device-sub">SN：ECG-2026-0188 · 电量 82%</span></span><span class="device-end">可测量<i data-lucide="chevron-right"></i></span></button></li>
+        </ul>
+      `);
+    }
+
+    function selectMeasurementDevice() {
+      appendUser('使用心电卡片开始心电测量');
+      completeActive('已选择设备');
+      appendAssistant('好的，这次就用心电卡片。先选好测量对象和时长，咚咚会一步步陪你完成。');
+      const card = createCard('测量前选择', '请选择测量对象和时长。', 'sliders-horizontal');
+      setCardBody(card, measurementConfigHtml());
+    }
+
+    function measurementConfigHtml() {
+      return `
+        <label class="form-label">测量对象</label>
+        <div class="segmented" role="radiogroup" aria-label="测量对象">
+          <label class="segment ${state.selectedPerson === '本人' ? 'selected' : ''}"><input type="radio" name="person" value="本人" ${state.selectedPerson === '本人' ? 'checked' : ''} onchange="setPerson(this.value)">本人</label>
+          <label class="segment ${state.selectedPerson === '非本人' ? 'selected' : ''}"><input type="radio" name="person" value="非本人" ${state.selectedPerson === '非本人' ? 'checked' : ''} onchange="setPerson(this.value)">非本人</label>
+        </div>
+        <label class="form-label">测量时长</label>
+        <div class="segmented duration" role="radiogroup" aria-label="测量时长">
+          ${['30 秒','1 分钟','3 分钟'].map(item => `<label class="segment ${state.selectedDuration === item ? 'selected' : ''}"><input type="radio" name="duration" value="${item}" ${state.selectedDuration === item ? 'checked' : ''} onchange="setDuration(this.value)">${item}</label>`).join('')}
+        </div>
+        <div class="electrode-guide" aria-label="手指轻放在心电卡片电极区域的图示"><i data-lucide="fingerprint"></i><span class="guide-link" aria-hidden="true"></span><i data-lucide="credit-card"></i></div>
+        <div class="notice"><i data-lucide="hand"></i><span>请按图示把手指轻放在电极区域。手臂自然放松，测量过程中尽量不要说话、移动或改变手指位置。<br>若波形抖动，请保持设备和手指稳定；如感到不适，可随时结束测量。</span></div>
+        <button class="primary-button" style="margin-top:12px" type="button" onclick="confirmMeasurement()">开始测量</button>
+      `;
+    }
+
+    function setPerson(value) {
+      state.selectedPerson = value;
+      setCardBody(state.activeCard, measurementConfigHtml());
+    }
+
+    function setDuration(value) {
+      state.selectedDuration = value;
+      setCardBody(state.activeCard, measurementConfigHtml());
+    }
+
+    function confirmMeasurement() {
+      appendUser(`为${state.selectedPerson}测量，时长${state.selectedDuration}`);
+      completeActive('已提交配置');
+      appendAssistant('我先为你检查蓝牙、心电卡片和导联连接。请保持手指轻放在电极区域，等待检测完成。');
+      const card = createCard('正在连接设备', '咚咚正在检查蓝牙、设备和导联状态。', 'bluetooth');
+      setCardBody(card, connectionHtml(0));
+      runConnection(card);
+    }
+
+    function connectionHtml(done) {
+      const items = ['蓝牙已开启', '心电卡片已连接', '固件版本可用', '导联状态正常'];
+      return `<ul class="check-list">${items.map((item, index) => `<li class="${index < done ? 'done' : ''}"><i data-lucide="${index < done ? 'circle-check' : 'circle'}"></i>${item}</li>`).join('')}</ul><div class="countdown" aria-live="polite" ${done === 4 ? '' : 'hidden'}>3</div><button class="text-button" style="width:100%" type="button" onclick="cancelConnection()">取消测量</button>`;
+    }
+
+    function runConnection(card) {
+      let done = 0;
+      const next = () => {
+        if (state.activeCard !== card || card.classList.contains('locked')) return;
+        done += 1;
+        setCardBody(card, connectionHtml(done));
+        if (done < 4) { setTimeout(next, 330); return; }
+        let count = 3;
+        const number = card.querySelector('.countdown');
+        const timer = setInterval(() => {
+          if (state.activeCard !== card || card.classList.contains('locked')) return clearInterval(timer);
+          count -= 1;
+          if (count <= 0) {
+            clearInterval(timer);
+            startMeasurement(card);
+          } else {
+            number.textContent = count;
+          }
+        }, 560);
+      };
+      setTimeout(next, 320);
+    }
+
+    function cancelConnection() {
+      clearActiveTimer();
+      completeActive('已取消测量');
+      showToast('本次测量已取消');
+    }
+
+    function startMeasurement(connectionCard) {
+      state.isMeasuring = true;
+      setCardPresentation(connectionCard, '正在测量', '请保持手指贴合电极、手臂放松。波形短暂抖动时，先不要移动，等它恢复稳定。', 'activity');
+      appendAssistant('设备连接好了，咚咚马上开始测量。请继续保持姿势稳定，直到倒计时结束。');
+      setCardBody(connectionCard, measurementHtml());
+      startMeasurementTimer(connectionCard);
+    }
+
+    function measurementHtml() {
+      return `
+        <div class="measurement-panel">
+          <div class="measure-metrics"><div><div class="metric-value">72</div><div class="metric-label">当前心率 bpm</div></div><span class="measure-divider"></span><div class="measure-time"><strong id="liveTime">00:30</strong><span>剩余时长</span></div></div>
+          <canvas id="liveWave" class="wave-canvas" width="700" height="184" role="img" aria-label="实时心电波形图"></canvas>
+          <div class="measure-footer"><span class="signal-good"><i data-lucide="circle-check"></i>导联连接良好</span><span>电量 82%</span><span class="gain"><button class="active" type="button" onclick="setGain(this)">x1</button><button type="button" onclick="setGain(this)">x2</button><button type="button" onclick="setGain(this)">x4</button></span></div>
+          <div class="measure-subline">已测时长 <strong id="elapsedTime">00:00</strong></div>
+        </div>
+        <div class="notice" style="margin-top:12px"><i data-lucide="shield-check"></i><span>静态测量需完整完成所选时长，测量过程中不可提前结束。</span></div>
+      `;
+    }
+
+    function setGain(button) {
+      button.parentElement.querySelectorAll('button').forEach(node => node.classList.remove('active'));
+      button.classList.add('active');
+      showToast(`已切换至 ${button.textContent} 波形增益`);
+    }
+
+    function startMeasurementTimer(card) {
+      const total = state.selectedDuration === '30 秒' ? 30 : state.selectedDuration === '1 分钟' ? 60 : 180;
+      let left = total;
+      let ticks = 0;
+      const liveWave = card.querySelector('#liveWave');
+      drawWave(liveWave, 0);
+      state.activeTimer = setInterval(() => {
+        if (state.activeCard !== card || card.classList.contains('locked')) return clearInterval(state.activeTimer);
+        ticks += 1;
+        left = Math.max(0, left - (state.selectedDuration === '3 分钟' ? 18 : 6));
+        const formatTime = seconds => `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+        card.querySelector('#liveTime').textContent = formatTime(left);
+        card.querySelector('#elapsedTime').textContent = formatTime(total - left);
+        drawWave(liveWave, ticks * 6);
+        if (left === 0 || ticks >= 5) {
+          clearInterval(state.activeTimer);
+          finishMeasurement(card);
+        }
+      }, 780);
+    }
+
+    function requestFinishMeasurement() {
+      openConfirm('结束本次测量？', '提前结束可能导致本次测量无法保存和分析。', '结束测量', () => finishMeasurement(state.activeCard));
+    }
+
+    function finishMeasurement(card) {
+      if (!card || card.classList.contains('locked')) return;
+      clearActiveTimer();
+      state.isMeasuring = false;
+      appendAssistant('测量结束啦，咚咚正在保存这次心电数据，请先不要关闭页面。');
+      setCardPresentation(card, '正在保存本次测量', '数据保存成功后，咚咚会自动开始 AI 分析。', 'upload-cloud');
+      setCardBody(card, `<div class="searching"><span class="spinner" aria-hidden="true"></span><span>保存中，请勿关闭页面…</span></div>`);
+      setTimeout(() => startAnalysis(card), 900);
+    }
+
+    function renderMeasurementSaved(card) {
+      setCardPresentation(card, '本次测量已保存', '心电数据已成功保存，咚咚正在生成 AI 分析。', 'circle-check', '上传完成');
+      setCardBody(card, `<div class="binding-success"><i data-lucide="circle-check"></i><span>心电数据已保存，正在生成分析结果。</span></div>`);
+    }
+
+    function renderAnalysisCompleted(card) {
+      setCardPresentation(card, 'AI 分析完成', '本次心电分析摘要已生成，可查看完整心电详情。', 'circle-check', '分析完成');
+      setCardBody(card, `<div class="binding-success"><i data-lucide="circle-check"></i><span>分析结果已生成，点击下方摘要卡查看详情。</span></div>`);
+    }
+
+    function startAnalysis(saving) {
+      if (state.activeCard !== saving) return;
+      renderMeasurementSaved(saving);
+      completeActive('上传完成');
+      appendAssistant('咚咚正在分析这次心电数据，结果出来后会第一时间告诉你。');
+      const card = createCard('AI 分析中', '正在生成本次心电分析摘要。', 'sparkles');
+      setCardBody(card, `<div class="searching"><span class="spinner" aria-hidden="true"></span><span>分析中，请稍候…</span></div>`);
+      setTimeout(() => showResult(card), 1300);
+    }
+
+    function showResult(card) {
+      if (state.activeCard !== card) return;
+      renderAnalysisCompleted(card);
+      completeActive('分析完成');
+      appendAssistant('分析完成啦，下面是本次心电摘要。想看完整解读，点卡片就可以。');
+      const wrap = document.createElement('section');
+      wrap.className = 'workflow-wrap';
+      wrap.innerHTML = `
+        <article class="summary-card" aria-label="本次心电分析摘要，点击查看详情" onclick="openDetail()">
+          <div class="summary-top"><div class="summary-diagnosis"><h3>窦性心律</h3></div><span class="summary-time">今天 10:42</span></div>
+          <div class="summary-meta"><span class="summary-meta-copy">心电图监测　平均 72 次/分</span></div>
+          <div class="summary-wave"><canvas id="summaryWave" class="wave-canvas" width="700" height="140" role="img" aria-label="本次心电波形缩略图"></canvas></div>
+          <div class="summary-data-line"><span>测量时长<strong>${state.selectedDuration}</strong></span><span class="source-tag"><i data-lucide="credit-card"></i>数据来源：心电卡片</span></div>
+          <div class="summary-metrics">
+            <div class="summary-metric"><span>心率变异性指数</span><span class="metric-badge high">高</span></div>
+            <div class="summary-metric"><span>心脏疾病风险评估</span><span class="metric-badge low risk-summary-badge" title="低风险">低风险</span></div>
+            <div class="summary-metric"><span>精神压力指数</span><span class="metric-badge mild">轻度</span></div>
+            <div class="summary-metric"><span>疲劳指数</span><span class="metric-badge medium">中度</span></div>
+          </div>
+          <button class="summary-detail-button" type="button" onclick="event.stopPropagation(); openDetail()">查看详情</button>
+          <p class="ai-disclaimer">内容由 AI 生成，仅供健康管理参考。</p>
+        </article>`;
+      chat.append(wrap);
+      drawSummaryWave(document.getElementById('summaryWave'), 12);
+      refreshIcons();
+      scrollChat();
+    }
+
+    function createErrorCard(title, copy, icon, body) {
+      const card = createCard(title, copy, icon);
+      setCardPresentation(card, title, copy, icon, '需要处理', 'error');
+      setCardBody(card, body);
+      return card;
+    }
+
+    function resetFlowForScenario() {
+      clearActiveTimer();
+      state.isMeasuring = false;
+      if (state.activeCard) lockCard(state.activeCard, '已暂停');
+      state.activeCard = null;
+    }
+
+    function openScenarioMenu() {
+      state.lastFocus = document.activeElement;
+      const options = document.getElementById('modalOptions');
+      options.hidden = false;
+      options.innerHTML = [
+        ['bluetooth', '蓝牙未开启'],
+        ['not-found', '未搜索到设备'],
+        ['bind-failed', '绑定失败'],
+        ['firmware', '设备需要更新'],
+        ['firmware-hold-failed', '未按住设备'],
+        ['lead', '导联连接异常'],
+        ['measurement-terminated', '测量已终止'],
+        ['unsavable', '测量无法保存'],
+        ['upload-failed', '上传失败'],
+        ['data-interference', '数据干扰，无法分析']
+      ].map(([type, label]) => `<button class="modal-option" type="button" onclick="runScenario('${type}')">${label}</button>`).join('');
+      document.getElementById('modalTitle').textContent = '异常演示';
+      document.getElementById('modalCopy').textContent = '请选择需要在评审中演示的异常场景。';
+      document.getElementById('modalPrimary').hidden = true;
+      const secondary = document.getElementById('modalSecondary');
+      secondary.hidden = false;
+      secondary.textContent = '取消';
+      const modal = document.getElementById('modalBackdrop');
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden', 'false');
+      options.querySelector('button').focus();
+    }
+
+    function runScenario(type) {
+      closeModal();
+      resetFlowForScenario();
+      if (type === 'bluetooth') return showBluetoothRequired();
+      if (type === 'not-found') return showNoDeviceFound();
+      if (type === 'bind-failed') return showBindFailed();
+      if (type === 'firmware') return showFirmwareRequired();
+      if (type === 'firmware-hold-failed') return showFirmwareHoldFailedScenario();
+      if (type === 'lead') return showLeadError();
+      if (type === 'measurement-terminated') return showMeasurementTerminated();
+      if (type === 'unsavable') return showUnsavableMeasurement();
+      if (type === 'upload-failed') return showUploadFailed();
+      if (type === 'data-interference') return showDataInterference();
+    }
+
+    function showBluetoothRequired() {
+      appendUser('我要绑定心电卡片');
+      appendAssistant('你还没有开启蓝牙，先检查一下手机蓝牙设置。完成后回来点“我已开启”，咚咚再继续帮你绑定。');
+      createErrorCard('请检查蓝牙设置', '', 'bluetooth', `
+        <div class="notice"><i data-lucide="settings"></i><span>请按以下步骤检查蓝牙设置：<br>1. 打开蓝牙：进入【设置】&gt;【蓝牙】，开启蓝牙。<br>2. 允许“心脏+”使用蓝牙：进入【设置】&gt;【App】&gt;【心脏+】，开启蓝牙权限。</span></div>
+        <button class="secondary-button" type="button" onclick="checkBluetoothReady()">我已开启</button>
+      `);
+    }
+
+    function checkBluetoothReady() {
+      appendUser('我已完成蓝牙设置');
+      completeActive('已重新检查');
+      appendAssistant('蓝牙已可用。咚咚现在可以继续帮你查找附近的心电卡片。');
+      const card = createCard('绑定心电卡片', '开启蓝牙后，咚咚会搜索附近可绑定的设备。', 'bluetooth');
+      buildBindingReadyCard(card);
+    }
+
+    function showNoDeviceFound() {
+      appendUser('开始搜索心电卡片');
+      appendAssistant('咚咚暂时没有找到设备。请确认设备已开启、蓝牙可用，并尽量靠近手机后再试一次。');
+      createErrorCard('未搜索到设备', '暂未发现可绑定的心电卡片。', 'search-x', `
+        <div class="notice"><i data-lucide="credit-card"></i><span>请确认心电卡片已开启并靠近手机后，再试一次。</span></div>
+        <div class="button-row"><button class="secondary-button" type="button" onclick="retrySearch()">重新搜索</button><button class="text-button" type="button" onclick="showBindingHelp()">绑定遇到问题</button></div>
+      `);
+    }
+
+    function retrySearch() {
+      appendUser('重新搜索心电卡片');
+      completeActive('已提交重试');
+      appendAssistant('收到，咚咚正在再次寻找附近的心电卡片。请保持设备开启，并尽量靠近手机。');
+      const card = createCard('正在搜索设备', '咚咚正在扫描附近可绑定的心电卡片。', 'radar');
+      setCardBody(card, searchingCardHtml());
+      setTimeout(() => showSearchResult(card), 900);
+    }
+
+    function showBindFailed() {
+      appendUser('绑定心电卡片');
+      appendAssistant('刚刚没有绑定成功，别着急，我们可以再试一次。');
+      createErrorCard('绑定失败', '设备绑定关系尚未建立。', 'circle-x', `
+        <div class="notice"><i data-lucide="triangle-alert"></i><span>你可以重新绑定，或向咚咚寻求帮助。</span></div>
+        <div class="button-row"><button class="secondary-button" type="button" onclick="retryBinding()">重新绑定</button><button class="text-button" type="button" onclick="showBindingHelp()">绑定遇到问题</button></div>
+      `);
+    }
+
+    function retryBinding() {
+      appendUser('重新绑定心电卡片');
+      completeActive('已提交重试');
+      appendAssistant('收到，咚咚正在再次为你完成绑定，请稍等一下。');
+      const card = createCard('正在绑定设备', '请保持设备开启并靠近手机。', 'link');
+      setCardBody(card, `<div class="searching"><span class="spinner" aria-hidden="true"></span><span>绑定中，请勿关闭页面…</span></div>`);
+      setTimeout(() => {
+        if (state.activeCard !== card) return;
+        state.deviceBound = true;
+        renderBindingCompleted(card);
+        completeActive('绑定完成');
+        appendAssistant('绑定完成啦！现在要不要马上做一次心电测量？');
+        showDeviceChoice(true);
+        showToast('设备已绑定');
+      }, 950);
+    }
+
+    function firmwareStepsHtml(stage = 'ready', progress = 0, reason = '', reasonIcon = 'wifi-off') {
+      const index = { download: 0, transfer: 1, install: 2, hold: 2, done: 3, failed: 1, 'hold-failed': 2 }[stage] ?? 0;
+      const steps = ['正在下载更新包', '正在发送更新包到设备', '正在安装'];
+      const rows = steps.map((label, stepIndex) => {
+        const done = stage === 'done' || stepIndex < index;
+        const active = stepIndex === index && !['done', 'failed', 'hold-failed'].includes(stage);
+        const failed = (stage === 'failed' && stepIndex === 1) || (stage === 'hold-failed' && stepIndex === 2);
+        const icon = failed ? 'circle-x' : done ? 'circle-check' : active ? 'loader-circle' : 'circle';
+        const suffix = active && progress ? `（${progress}%）` : '';
+        return `<li class="${done ? 'done' : ''} ${active ? 'active' : ''} ${failed ? 'failed' : ''}"><i data-lucide="${icon}"></i><span>${label}${suffix}</span></li>`;
+      }).join('');
+      return `<div class="firmware-progress"><div class="firmware-ring" style="--firmware-progress:${progress}%"><strong>${progress}%</strong></div></div><ul class="firmware-steps">${rows}</ul>${reason ? `<div class="notice"><i data-lucide="${reasonIcon}"></i><span>${reason}</span></div>` : ''}`;
+    }
+
+    function renderFirmwareReady(card) {
+      setCardPresentation(card, '设备更新', '', 'refresh-cw', '待更新');
+      setCardBody(card, `<ul class="firmware-note-list"><li>更新过程中请保持设备靠近手机。</li><li>更新过程中请不要退出心脏+ App。</li><li>整个更新过程约需 1-3 分钟，请耐心等待。</li></ul><button class="primary-button" type="button" onclick="startFirmwareUpgrade(state.activeCard)">更新</button>`);
+    }
+
+    function renderFirmwareProgress(card, stage = 'transfer', progress = 25) {
+      setCardPresentation(card, '心电卡片正在更新，请稍后…', '', 'refresh-cw', '更新中');
+      setCardBody(card, firmwareStepsHtml(stage, progress));
+    }
+
+    function renderFirmwareHold(card) {
+      setCardPresentation(card, '心电卡片正在更新，请稍后…', '', 'refresh-cw', '更新中');
+      setCardBody(card, `${firmwareStepsHtml('hold', 78)}${firmwareHoldGuideHtml()}`);
+    }
+
+    function renderFirmwareCompleted(card) {
+      setCardPresentation(card, '心电卡片更新完成', '', 'circle-check', '更新完成');
+      setCardBody(card, `${firmwareStepsHtml('done', 100)}<button class="primary-button" type="button" onclick="continueMeasurementAfterUpgrade(state.activeCard)">继续测量</button>`);
+    }
+
+    function renderFirmwareFailed(card, reason = '网络连接失败，请重试！') {
+      setCardPresentation(card, '设备更新失败', '', 'triangle-alert', '需要处理', 'error');
+      setCardBody(card, `${firmwareStepsHtml('failed', 25, reason)}<button class="primary-button" type="button" onclick="startFirmwareUpgrade(state.activeCard, true)">重试</button>`);
+    }
+
+    function renderFirmwareHoldFailed(card) {
+      setCardPresentation(card, '设备更新失败', '', 'triangle-alert', '需要处理', 'error');
+      setCardBody(card, `${firmwareStepsHtml('hold-failed', 78, '安装失败！请根据图示按住心电卡片后重试。', 'triangle-alert')}${firmwareHoldGuideHtml()}<button class="primary-button" type="button" onclick="startFirmwareUpgrade(state.activeCard, true)">重试</button>`);
+    }
+
+    function renderFirmwareBatteryLow(card) {
+      setCardPresentation(card, '设备电量不足', '', 'battery-low', '需要处理', 'error');
+      setCardBody(card, `<div class="notice"><i data-lucide="battery-low"></i><span>当前设备电量低于 10%，暂无法更新。请先充电后再试。</span></div><button class="primary-button" type="button" onclick="retryConnection()">重新检测</button>`);
+    }
+
+    function firmwareHoldGuideHtml() {
+      return `<div class="firmware-hold"><div class="installation-illustration" aria-hidden="true"><span class="installation-arrow">↑</span><span class="installation-device"><i data-lucide="credit-card"></i><b>ECG</b></span><i class="installation-hand left" data-lucide="hand"></i><i class="installation-hand right" data-lucide="hand"></i></div><span>请按住心电卡片完成安装…</span></div>`;
+    }
+
+    function startFirmwareUpgrade(card, retry = false) {
+      if (!card || card.classList.contains('locked')) return;
+      appendUser(retry ? '重试更新心电卡片' : '更新心电卡片');
+      appendAssistant(retry ? '收到，咚咚正在重新更新设备，请保持设备靠近手机。' : '好哒，咚咚开始更新设备啦。请保持设备靠近手机，更新过程中不要退出 App。');
+      renderFirmwareProgress(card, 'transfer', 25);
+      setTimeout(() => {
+        if (state.activeCard !== card || card.classList.contains('locked')) return;
+        renderFirmwareHold(card);
+      }, 800);
+      setTimeout(() => {
+        if (state.activeCard !== card || card.classList.contains('locked')) return;
+        appendAssistant('设备更新完成啦，可以继续测量啦。');
+        renderFirmwareCompleted(card);
+      }, 1750);
+    }
+
+    function continueMeasurementAfterUpgrade(card) {
+      if (!card || card.classList.contains('locked')) return;
+      setCardPresentation(card, '正在连接设备', '', 'bluetooth', '进行中');
+      setCardBody(card, connectionHtml(0));
+      runConnection(card);
+    }
+
+    function showFirmwareRequired() {
+      appendUser(`为${state.selectedPerson}测量，时长${state.selectedDuration}`);
+      appendAssistant('我先为你检查蓝牙、心电卡片和导联连接。请保持手指轻放在电极区域，等待检测完成。');
+      const card = createCard('正在连接设备', '咚咚正在检查蓝牙、设备和导联状态。', 'bluetooth');
+      setCardBody(card, connectionHtml(2));
+      setTimeout(() => {
+        if (state.activeCard === card) {
+          appendAssistant('为了更稳定地完成测量，咚咚需要先帮你更新心电卡片，预计需要 1-3 分钟。');
+          renderFirmwareReady(card);
+        }
+      }, 520);
+    }
+
+    function showFirmwareHoldFailedScenario() {
+      appendUser(`为${state.selectedPerson}测量，时长${state.selectedDuration}`);
+      appendAssistant('我先为你检查蓝牙、心电卡片和导联连接。请保持手指轻放在电极区域，等待检测完成。');
+      const card = createCard('正在连接设备', '咚咚正在检查蓝牙、设备和导联状态。', 'bluetooth');
+      setCardBody(card, connectionHtml(2));
+      setTimeout(() => {
+        if (state.activeCard !== card) return;
+        appendAssistant('还差最后一步，请按住心电卡片，咚咚正在帮你完成安装。');
+        renderFirmwareHold(card);
+      }, 420);
+      setTimeout(() => {
+        if (state.activeCard !== card) return;
+        appendAssistant('没有检测到你按住心电卡片，请根据图示调整后重试。');
+        renderFirmwareHoldFailed(card);
+      }, 1250);
+    }
+
+    function showLeadError() {
+      appendUser(`为${state.selectedPerson}测量，时长${state.selectedDuration}`);
+      appendAssistant('咚咚正在检查连接状态。当前还没有检测到稳定的导联接触，请调整手指位置后重新检测。');
+      createErrorCard('导联连接异常', '未检测到稳定的导联接触，倒计时已停止。', 'triangle-alert', `
+        <div class="notice"><i data-lucide="hand"></i><span>请保持手指贴合电极、手臂放松，再重新检测导联状态。</span></div>
+        <button class="secondary-button" type="button" onclick="retryConnection()">重新检测</button>
+      `);
+    }
+
+    function retryConnection() {
+      appendUser('重新检测导联连接');
+      completeActive('已提交重试');
+      appendAssistant('收到，咚咚正在重新检查蓝牙、设备和导联状态。');
+      const card = createCard('正在连接设备', '咚咚正在检查蓝牙、设备和导联状态。', 'bluetooth');
+      setCardBody(card, connectionHtml(0));
+      runConnection(card);
+    }
+
+    function renderMeasurementTerminated(card) {
+      setCardPresentation(card, '测量已终止', '', 'circle-x', '需要处理', 'error');
+      setCardBody(card, `
+        <div class="notice"><i data-lucide="smartphone"></i><span>测量过程中请勿关闭页面，确保设备已开启、蓝牙可用，并尽量靠近手机。</span></div>
+        <button class="primary-button" style="margin-top:12px" type="button" onclick="retryMeasurement()">重新测量</button>
+      `);
+    }
+
+    function terminateMeasurement(card = state.activeCard) {
+      if (!card || card.classList.contains('locked')) return;
+      clearActiveTimer();
+      state.isMeasuring = false;
+      renderMeasurementTerminated(card);
+      appendAssistant('这次测量没有完成，咚咚陪你重新测一次吧。');
+    }
+
+    function showMeasurementTerminated() {
+      appendUser(`为${state.selectedPerson}测量，时长${state.selectedDuration}`);
+      const card = createCard('正在测量', '请保持手指贴合电极、手臂放松。', 'activity');
+      setCardBody(card, measurementHtml());
+      state.isMeasuring = true;
+      terminateMeasurement(card);
+    }
+
+    function showUnsavableMeasurement() {
+      appendAssistant('本次测量未达到保存条件，咚咚没有创建心电记录或发起分析。');
+      createErrorCard('本次测量无法保存', '请重新完成一次测量后再查看分析结果。', 'circle-x', `
+        <div class="notice"><i data-lucide="activity"></i><span>咚咚会保留刚才选择的设备、测量对象和时长，方便你重新测量。</span></div>
+        <button class="primary-button" style="margin-top:12px" type="button" onclick="retryMeasurement()">重新测量</button>
+      `);
+    }
+
+    function retryMeasurement() {
+      appendUser('重新测量');
+      completeActive('已提交重试');
+      appendAssistant('好的，咚咚已为你保留刚才的测量设置。确认后就可以重新开始。');
+      const card = createCard('测量前选择', '已保留上次选择的测量对象和时长。', 'sliders-horizontal');
+      setCardBody(card, measurementConfigHtml());
+    }
+
+    function showUploadFailed() {
+      appendAssistant('这次测量已经安全保存。网络恢复后咚咚会继续上传，你也可以现在重新上传。');
+      createErrorCard('上传失败', '当前测量会话已保存，尚未创建心电记录和分析任务。', 'cloud-off', `
+        <div class="notice"><i data-lucide="wifi-off"></i><span>请检查网络后重新上传。重新上传不会影响已保存的测量数据。</span></div>
+        <button class="primary-button" style="margin-top:12px" type="button" onclick="retryUpload()">重新上传</button>
+      `);
+    }
+
+    function retryUpload() {
+      appendUser('重新上传本次心电数据');
+      completeActive('已提交重试');
+      appendAssistant('收到，咚咚正在重新上传这次心电数据，请稍候。');
+      const card = createCard('正在保存本次测量', '数据保存成功后，咚咚会自动开始 AI 分析。', 'upload-cloud');
+      setCardBody(card, `<div class="searching"><span class="spinner" aria-hidden="true"></span><span>保存中，请勿关闭页面…</span></div>`);
+      setTimeout(() => startAnalysis(card), 900);
+    }
+
+    function showDataInterference() {
+      appendAssistant('本次心电数据受到较多干扰，暂时无法生成分析结果。重新测量后，咚咚再帮你看看。');
+      createErrorCard('数据干扰，无法分析', '本次心电数据受到干扰。', 'activity', `
+        <div class="notice"><i data-lucide="activity"></i><span>请重新测量。</span></div>
+        <div class="button-stack"><button class="primary-button" type="button" onclick="retryMeasurement()">重新测量</button><button class="text-button" type="button" onclick="openDetail()">查看详情</button></div>
+      `);
+    }
+
+    function renderCardPreview(type) {
+      document.body.classList.add('card-preview');
+      if (type === 'record-drawer') document.body.classList.add('drawer-preview');
+      chat.innerHTML = '';
+      state.activeCard = null;
+      state.selectedPerson = '本人';
+      state.selectedDuration = '30 秒';
+
+      const loading = (title, copy, icon, text) => {
+        const card = createCard(title, copy, icon);
+        setCardBody(card, `<div class="searching"><span class="spinner" aria-hidden="true"></span><span>${text}</span></div>`);
+        return card;
+      };
+
+      switch (type) {
+        case 'bind-ready': {
+          const card = createCard('绑定心电卡片', '开启蓝牙后，咚咚会搜索附近可绑定的设备。', 'bluetooth');
+          buildBindingReadyCard(card);
+          break;
+        }
+        case 'searching': {
+          const card = createCard('正在搜索设备', '咚咚正在扫描附近可绑定的心电卡片。', 'radar');
+          setCardBody(card, searchingCardHtml());
+          break;
+        }
+        case 'search-result': {
+          const card = createCard('正在搜索设备', '咚咚正在扫描附近可绑定的心电卡片。', 'radar');
+          showSearchResult(card);
+          break;
+        }
+        case 'binding':
+          loading('正在绑定设备', '请保持设备开启并靠近手机。', 'link', '绑定中，请勿关闭页面…');
+          break;
+        case 'bound': {
+          const card = createCard('正在绑定设备', '请保持设备开启并靠近手机。', 'link');
+          renderBindingCompleted(card);
+          break;
+        }
+        case 'device-type-choice-v2': {
+          const card = createCard('选择设备类型', '请选择准备绑定的设备。', 'layout-grid');
+          setCardBody(card, deviceTypeGalleryV2('chooseBindingTypeV2'));
+          break;
+        }
+        case 'patch-device-type-choice-v2': {
+          const card = createCard('选择设备类型', '请根据设备外观和型号选择准备绑定的设备。', 'layout-grid');
+          setCardBody(card, deviceTypeGalleryV2('chooseBindingTypeV2'));
+          break;
+        }
+        case 'patch-start-guide-v2': {
+          const item = deviceTypesV2.patch72;
+          const card = createCard(`开启${item.name}`, '确认设备已开机后再开始搜索。', 'power');
+          setCardBody(card, `${bindingGuideMarkupV2('patch72', item)}<button class="primary-button" type="button">开始搜索</button>`);
+          break;
+        }
+        case 'patch-wear-guide-v2': {
+          const item = deviceTypesV2.patch72;
+          const card = createCard(`佩戴${item.name}`, '请按该型号说明完成佩戴。', 'heart-pulse');
+          setCardBody(card, `${wearGuideMarkupV2('patch72', item)}<button class="primary-button" type="button">已完成佩戴</button>`);
+          break;
+        }
+        case 'patch24-wear-guide-v2': {
+          const item = deviceTypesV2.patch24;
+          const card = createCard(`佩戴${item.name}`, '请按图完成设备与电极贴合。', 'heart-pulse');
+          setCardBody(card, `${wearGuideMarkupV2('patch24', item)}<button class="primary-button" type="button">已完成佩戴</button>`);
+          break;
+        }
+        case 'measurement-device-v2': {
+          const card = createCard('选择测量设备', '请选择本次要使用的设备。', 'heart-pulse');
+          const active = PrototypeState.getActiveTasks();
+          setCardBody(card, `<div class="device-type-list">${PrototypeState.devices.map(device=>{const task=active.find(t=>t.deviceId===device.id);return `<button class="device-type-button" type="button" ${task?'disabled':''}><span class="device-icon"><i data-lucide="${device.type==='card'?'credit-card':'heart-pulse'}"></i></span><span><strong>${device.name}</strong><small>${device.model} · 电量${device.battery}%</small></span><b>${task?(task.status==='waiting'?'待接收':'测量中'):'可测量'}</b>${task?'':'<i data-lucide="chevron-right"></i>'}</button>`}).join('')}</div><button class="text-button" style="width:100%;margin-top:8px" type="button">绑定新设备</button>`);
+          break;
+        }
+        case 'measure-config-v2': {
+          selectedDeviceV2 = PrototypeState.devices.find(item=>item.type==='patch72');
+          selectedDurationV2 = '72小时';
+          const card = createCard('设置本次测量', '所选时长将自动决定静态或动态任务。', 'sliders-horizontal');
+          setCardBody(card, measureConfigMarkupV2(deviceTypesV2.patch72));
+          break;
+        }
+        case 'dynamic-measuring-v2': {
+          const task = PrototypeState.getTask('task-measuring');
+          const card = createCard('动态心电进度', '正在同步最新进度。', 'heart-pulse');
+          renderMeasuringTaskV2(card, task);
+          break;
+        }
+        case 'dynamic-waiting-v2': {
+          const task = PrototypeState.getTask('task-receive');
+          const card = createCard('动态心电进度', '正在同步最新进度。', 'heart-pulse');
+          renderWaitingTaskV2(card, task);
+          break;
+        }
+        case 'dynamic-receiving-v2': {
+          const card = createCard('数据接收中', '正在读取设备中的动态心电数据。', 'download-cloud');
+          setCardPresentation(card, '数据接收中', '正在读取设备中的动态心电数据。', 'download-cloud', '不可离开');
+          setCardBody(card, progressMarkupV2(38, '已接收 3,648 / 9,600 个数据包', '预计剩余 2 分钟'));
+          break;
+        }
+        case 'dynamic-uploading-v2': {
+          const card = createCard('正在上传数据', '上传中，请勿关闭页面...', 'upload-cloud');
+          setCardPresentation(card, '正在上传数据', '上传中，请勿关闭页面...', 'upload-cloud', '上传中');
+          setCardBody(card, '<div class="searching"><span class="spinner" aria-hidden="true"></span><span>上传中，请勿关闭页面...</span></div>');
+          break;
+        }
+        case 'dynamic-analyzing-v2': {
+          const card = createCard('AI分析中', '心电数据上传成功，正在生成分析结果。', 'sparkles');
+          setCardPresentation(card, 'AI分析中', '心电数据上传成功，正在生成分析结果。', 'sparkles', '分析中');
+          setCardBody(card, `<div class="searching"><span class="spinner"></span><span>正在分析长程心电数据，你可以先去看看其他内容。</span></div><div class="notice"><i data-lucide="circle-check"></i><span>心电数据已安全保存。</span></div>`);
+          break;
+        }
+        case 'dynamic-result-v2': {
+          const card = createCard('AI分析中', '正在生成分析结果。', 'sparkles');
+          renderDynamicResultV2(card, PrototypeState.getTask('task-measuring'));
+          break;
+        }
+        case 'dynamic-terminated-v2':
+          createErrorCard('测量已终止', '本次测量不足5分钟，无法保存。', 'circle-x', `<div class="notice"><i data-lucide="info"></i><span>本次不会生成心电记录，也不会进入AI分析和医生解读。</span></div><button class="primary-button" type="button">重新测量</button>`);
+          break;
+        case 'patch-searching-v2': {
+          const card = createCard('正在搜索设备', '正在查找附近已开启的心电贴。', 'radar');
+          setCardBody(card, `<div class="searching"><span class="spinner" aria-hidden="true"></span><span>请将心电贴靠近手机，并保持蓝牙开启…</span></div><button class="text-button" type="button">停止搜索</button>`);
+          break;
+        }
+        case 'patch-search-result-v2': {
+          const card = createCard('选择要绑定的设备', '已发现附近可绑定的72小时心电贴。', 'heart-pulse');
+          setCardBody(card, `<button class="device-type-button" type="button"><span class="device-icon"><i data-lucide="heart-pulse"></i></span><span><strong>72小时心电贴</strong><small>TE-5100Y-D1 · SN 25D1086</small></span><b>电量86%</b><i data-lucide="chevron-right"></i></button><button class="text-button" style="width:100%;margin-top:8px" type="button">重新搜索</button>`);
+          break;
+        }
+        case 'patch-binding-v2':
+          loading('正在绑定设备', '请保持72小时心电贴开启并靠近手机。', 'link', '正在建立设备连接，请勿关闭页面…');
+          break;
+        case 'patch-bound-v2': {
+          const card = createCard('绑定完成', '72小时心电贴已添加到健康设备。', 'circle-check');
+          setCardPresentation(card, '绑定完成', '72小时心电贴已添加到健康设备。', 'circle-check', '已绑定');
+          setCardBody(card, `<div class="notice"><i data-lucide="shield-check"></i><span>设备：TE-5100Y-D1 · SN 25D1086</span></div><button class="primary-button" type="button" onclick="renderCardPreview('patch-device-choice-v2')">开始测量</button>`);
+          break;
+        }
+        case 'patch-device-choice-v2': {
+          const card = createCard('选择测量设备', '请选择本次要使用的心电贴。', 'heart-pulse');
+          setCardBody(card, `<div class="device-type-list"><button class="device-type-button" type="button" onclick="renderCardPreview('measure-config-v2')"><span class="device-icon"><i data-lucide="heart-pulse"></i></span><span><strong>72小时心电贴</strong><small>TE-5100Y-D1 · 电量86%</small></span><b>可测量</b><i data-lucide="chevron-right"></i></button><button class="device-type-button" type="button" disabled><span class="device-icon"><i data-lucide="heart-pulse"></i></span><span><strong>24小时心电贴</strong><small>TE-5100Y-C · 电量78%</small></span><b>待接收</b></button></div><button class="text-button" style="width:100%;margin-top:8px" type="button">绑定新设备</button>`);
+          break;
+        }
+        case 'patch-starting-v2': {
+          const card = createCard('正在启动动态测量', '正在检查设备、电量、历史数据和任务状态。', 'loader-circle');
+          setCardPresentation(card, '正在启动动态测量', '正在检查设备、电量、历史数据和任务状态。', 'loader-circle', '启动中');
+          setCardBody(card, `<div class="searching"><span class="spinner" aria-hidden="true"></span><span>正在清理缓存并下发72小时测量任务…</span></div><div class="notice"><i data-lucide="info"></i><span>设备确认开始记录后，才会创建可恢复的动态任务。</span></div>`);
+          break;
+        }
+        case 'patch-static-measuring-v2': {
+          const card = createCard('静态心电测量中', '本人 · 72小时心电贴 · 3分钟', 'activity');
+          setCardPresentation(card, '静态心电测量中', '本人 · 72小时心电贴 · 3分钟', 'activity', '测量中');
+          setCardBody(card, `<div class="dynamic-panel"><div class="dynamic-top"><span><strong>72</strong> 次/分<small>当前心率</small></span><span class="dynamic-battery">剩余 02:18</span></div>${dynamicWaveV2()}</div><div class="notice" style="margin-top:10px"><i data-lucide="info"></i><span>静态测量不可中途结束，请保持设备与导联稳定，完整完成所选时长。</span></div>`);
+          requestAnimationFrame(drawDynamicWavesV2);
+          break;
+        }
+        case 'patch-static-saving-v2':
+          loading('正在保存本次测量', '数据保存成功后将自动开始AI分析。', 'upload-cloud', '正在保存，请勿关闭页面…');
+          break;
+        case 'doctor-submit-v2': {
+          const card = createCard('提交医生解读', 'AI分析已完成，可提交平台医生进行专业解读。', 'stethoscope');
+          setCardBody(card, `<div class="notice"><i data-lucide="user-round-check"></i><span>无需选择医生，提交后由平台医生按现有规则接单。</span></div><button class="primary-button" type="button" onclick="renderCardPreview('doctor-waiting-v2')">确认提交</button>`);
+          break;
+        }
+        case 'doctor-waiting-v2': {
+          const card = createCard('医生解读', '已提交平台医生，请耐心等待。', 'stethoscope');
+          setCardPresentation(card, '医生解读', '已提交平台医生，请耐心等待。', 'stethoscope', '待接单');
+          setCardBody(card, `<div class="notice"><i data-lucide="clock-3"></i><span>平台正在安排医生接单，完成解读后才会生成PDF报告。</span></div>`);
+          break;
+        }
+        case 'doctor-interpreting-v2': {
+          const card = createCard('医生解读', '医生正在查看完整AI分析和本次心电数据。', 'stethoscope');
+          setCardPresentation(card, '医生解读', '医生正在查看完整AI分析和本次心电数据。', 'stethoscope', '解读中');
+          setCardBody(card, `<div class="searching"><span class="spinner" aria-hidden="true"></span><span>医生正在解读，请耐心等待…</span></div>`);
+          break;
+        }
+        case 'doctor-completed-v2': {
+          const card = createCard('医生解读完成', '本次医生解读报告已生成。', 'file-check-2');
+          setCardPresentation(card, '医生解读完成', '本次医生解读报告已生成。', 'file-check-2', '已解读');
+          setCardBody(card, `<div class="notice"><i data-lucide="circle-check"></i><span>医生意见和PDF报告已同步到本次动态心电记录。</span></div><button class="primary-button" type="button">查看PDF报告</button>`);
+          break;
+        }
+        case 'patch-bluetooth-error-v2':
+          createErrorCard('请开启蓝牙', '需要使用蓝牙连接本次测量的心电贴。', 'bluetooth-off', `<div class="notice"><i data-lucide="settings"></i><span>请开启手机蓝牙，并允许“心脏+”使用蓝牙。</span></div><button class="primary-button" type="button">去设置</button>`);
+          break;
+        case 'patch-low-battery-v2':
+          createErrorCard('设备电量不足', '当前电量不足以完成所选的72小时测量。', 'battery-low', `<div class="notice"><i data-lucide="battery-charging"></i><span>请先为心电贴充电，再重新检测设备状态。</span></div><button class="secondary-button" type="button">重新检测</button>`);
+          break;
+        case 'patch-not-found-v2':
+          createErrorCard('未搜索到设备', '暂未发现所选类型的心电贴。', 'search-x', `<div class="notice"><i data-lucide="heart-pulse"></i><span>请确认设备已开机、选择了对应型号，并保持设备靠近手机；检查手机蓝牙及相关权限后重新搜索。</span></div><button class="primary-button" type="button" onclick="renderCardPreview('patch-searching-v2')">重新搜索</button>`);
+          break;
+        case 'patch-bind-failed-v2':
+          createErrorCard('绑定失败', '账号与设备的绑定关系尚未建立。', 'link-2-off', `<div class="notice"><i data-lucide="refresh-cw"></i><span>请保持心电贴靠近手机后重新绑定。</span></div><button class="primary-button" type="button" onclick="renderCardPreview('patch-binding-v2')">重新绑定</button>`);
+          break;
+        case 'patch-version-error-v2':
+          createErrorCard('设备版本暂不支持', '当前设备版本无法开始本次测量。', 'badge-alert', `<div class="notice"><i data-lucide="refresh-cw"></i><span>请按提示完成设备更新或联系客服，更新成功后重新检测。</span></div><button class="primary-button" type="button">检查更新</button><button class="text-button" type="button">联系客服</button>`);
+          break;
+        case 'patch-pending-data-v2':
+          createErrorCard('设备中有待接收数据', '接收或放弃已有数据后，才能开始新测量。', 'database', `<div class="notice"><i data-lucide="shield-alert"></i><span>为避免覆盖数据，当前不会清理设备存储或启动新任务。</span></div><button class="primary-button" type="button" onclick="renderCardPreview('dynamic-waiting-v2')">接收已有数据</button><button class="text-button" type="button">放弃已有数据</button>`);
+          break;
+        case 'patch-task-conflict-v2':
+          createErrorCard('该设备已有进行中任务', '同一台心电贴不能同时进行多个测量。', 'copy-x', `<div class="notice"><i data-lucide="heart-pulse"></i><span>你可以恢复当前任务，或选择其他空闲的心电贴。</span></div><button class="primary-button" type="button" onclick="renderCardPreview('dynamic-measuring-v2')">查看当前任务</button>`);
+          break;
+        case 'patch-start-failed-v2':
+          createErrorCard('设备启动失败', '心电贴尚未开始记录，本次未生成正式心电记录。', 'circle-alert', `<div class="notice"><i data-lucide="refresh-cw"></i><span>请确认设备电量和开机状态，并按该型号随附说明重新开启设备后再试。</span></div><button class="primary-button" type="button" onclick="renderCardPreview('patch-starting-v2')">重新启动</button>`);
+          break;
+        case 'patch-disconnected-v2': {
+          const task = {...PrototypeState.getTask('task-measuring'), lastSync:'连接已断开'};
+          const card = createCard('测量进程', '正在同步最新状态。', 'heart-pulse');
+          setCardPresentation(card, '正在测量', PrototypeState.taskSubject(task), 'activity', '测量中');
+          setCardBody(card, `<div class="dynamic-panel"><div class="dynamic-top"><span><strong>剩 ${task.remaining}</strong><small>剩余时长</small></span></div><div class="dynamic-info disconnected-info"><span>计划测量时长<strong>${task.planned}</strong></span><span>开始时间<strong>${task.startedAt}</strong></span></div></div><button class="primary-button" type="button" onclick="connectTaskV2('${task.id}',true)">连接设备</button>`);
+          break;
+        }
+        case 'patch-lead-off-v2': {
+          const card = createCard('动态心电测量中', '本人 · 72小时心电贴', 'activity');
+          setCardPresentation(card, '动态心电测量中', '本人 · 72小时心电贴', 'activity', '测量中');
+          setCardBody(card, `<div class="notice"><i data-lucide="triangle-alert"></i><span>导联接触不稳定，设备仍在继续记录。请检查贴片是否贴合皮肤。</span></div><div class="dynamic-info"><span>已测时长<strong>18:33:20</strong></span><span>剩余时长<strong>剩 2天05:26:35</strong></span></div><button class="secondary-button" type="button">查看佩戴指引</button>`);
+          break;
+        }
+        case 'patch-stop-unavailable-v2': {
+          const card = createCard('动态心电测量中', '本人 · 72小时心电贴', 'activity');
+          setCardPresentation(card, '动态心电测量中', '本人 · 72小时心电贴', 'activity', '测量中');
+          setCardBody(card, `<div class="notice"><i data-lucide="bluetooth-off"></i><span>停止测量前，需要先连接本次任务使用的心电贴并读取当前数据。</span></div><button class="primary-button" type="button">连接设备</button><button class="secondary-button" type="button" disabled aria-describedby="stopUnavailableReason">停止测量</button><p id="stopUnavailableReason" class="ai-disclaimer">连接成功后即可停止测量。</p>`);
+          break;
+        }
+        case 'patch-static-interrupted-v2':
+          createErrorCard('本次静态测量未完成', '静态测量必须完整完成所选时长。', 'circle-x', `<div class="notice"><i data-lucide="info"></i><span>本次不会保存为可分析记录，请重新完成一次静态测量。</span></div><button class="primary-button" type="button">重新测量</button>`);
+          break;
+        case 'patch-wrong-device-v2':
+          createErrorCard('设备不匹配', '当前连接的设备不是本任务使用的心电贴。', 'scan-line', `<div class="notice"><i data-lucide="info"></i><span>请连接72小时心电贴 · SN 25D1086后继续接收。</span></div><button class="primary-button" type="button">重新连接</button>`);
+          break;
+        case 'patch-receive-occupied-v2':
+          createErrorCard('设备正在接收数据', '另一台已登录手机正在接收本任务数据。', 'smartphone', `<div class="notice"><i data-lucide="info"></i><span>同一任务不能在两台手机上重复接收，请在当前设备完成后再试。</span></div><button class="secondary-button" type="button">刷新状态</button>`);
+          break;
+        case 'patch-receive-interrupted-v2':
+          createErrorCard('接收已暂停', '接收进度已保留，请重新连接同一台心电贴。', 'cloud-off', `<div class="progress-shell"><div class="progress-fill" style="width:38%"></div></div><div class="progress-copy"><span>已接收 3,648 / 9,600 个数据包</span><strong>38%</strong></div><div class="notice"><i data-lucide="shield-check"></i><span>已接收的数据不会丢失，重新连接后将继续接收。</span></div><button class="primary-button" type="button" onclick="renderCardPreview('dynamic-receiving-v2')">重新连接并继续</button><button class="text-button" type="button">放弃数据</button>`);
+          break;
+        case 'patch-data-incomplete-v2':
+          createErrorCard('数据不完整', '正在尝试补取缺失的心电数据。', 'file-warning', `<div class="notice"><i data-lucide="download"></i><span>请保持同一台心电贴靠近手机，补取完成后会自动继续。</span></div><button class="primary-button" type="button">重新补取</button>`);
+          break;
+        case 'patch-local-write-failed-v2':
+          createErrorCard('数据保存失败', '设备原始数据仍然保留，可以重新接收。', 'hard-drive-download', `<div class="notice"><i data-lucide="shield-check"></i><span>当前不会清除设备数据，请确保手机存储空间充足后重试。</span></div><button class="primary-button" type="button">重新保存</button>`);
+          break;
+        case 'patch-upload-failed-v2':
+          createErrorCard('数据上传失败', '动态心电数据已保留，尚未进入AI分析。', 'cloud-off', `<div class="notice"><i data-lucide="wifi-off"></i><span>请检查网络后重新上传，不需要重新测量或接收。</span></div><button class="primary-button" type="button" onclick="renderCardPreview('dynamic-uploading-v2')">重新上传</button>`);
+          break;
+        case 'patch-no-valid-data-v2':
+          createErrorCard('暂无法生成分析', '本次数据无有效信号或解析异常。', 'activity', `<div class="notice"><i data-lucide="headphones"></i><span>本次不会生成可分析记录，如需帮助请联系客服。</span></div><button class="secondary-button" type="button">联系客服</button>`);
+          break;
+        case 'patch-abandoned-v2':
+          createErrorCard('数据已放弃', '本次任务已结束，不会进入AI分析和医生解读。', 'trash-2', `<div class="notice"><i data-lucide="info"></i><span>如设备暂未连接，将在下次连接时继续清理设备中的本次数据。</span></div><button class="primary-button" type="button">完成</button>`);
+          break;
+        case 'patch-clear-failed-v2':
+          createErrorCard('设备数据待清理', '本次记录状态不受影响。', 'database-backup', `<div class="notice"><i data-lucide="info"></i><span>下次连接或使用该设备前会再次清理；清理完成后才能开始新测量。</span></div><button class="secondary-button" type="button">重新清理</button>`);
+          break;
+        case 'patch-ai-failed-v2':
+          createErrorCard('AI分析失败', '动态心电记录已保留，暂不能提交医生解读。', 'sparkles', `<div class="notice"><i data-lucide="refresh-cw"></i><span>可能由文件、数据解析、有效信号质量或分析服务异常导致。咚咚会尝试重新分析。</span></div><button class="primary-button" type="button" onclick="renderCardPreview('dynamic-analyzing-v2')">重新分析</button><button class="text-button" type="button">联系客服</button>`);
+          break;
+        case 'patch-doctor-submit-failed-v2':
+          createErrorCard('医生解读提交失败', '当前尚未成功创建医生解读订单。', 'stethoscope', `<div class="notice"><i data-lucide="info"></i><span>本次AI分析结果已保留，请检查资料、权益或网络后重试。</span></div><button class="primary-button" type="button" onclick="renderCardPreview('doctor-submit-v2')">重新提交</button>`);
+          break;
+        case 'patch-doctor-service-error-v2':
+          createErrorCard('医生服务处理中', '医生接单或履约遇到异常，平台正在协调处理。', 'user-round-x', `<div class="notice"><i data-lucide="headphones"></i><span>无需重新提交订单，平台会按现有改派、退款和客服规则处理。</span></div><button class="secondary-button" type="button">联系客服</button>`);
+          break;
+        case 'patch-pdf-failed-v2':
+          createErrorCard('报告生成失败', '医生解读已经完成，结论不会受影响。', 'file-warning', `<div class="notice"><i data-lucide="refresh-cw"></i><span>可以重新生成PDF报告，或联系客服协助处理。</span></div><button class="primary-button" type="button">重新生成</button>`);
+          break;
+        case 'no-device': {
+          const card = createCard('暂无可用于测量的设备', '你还没有绑定健康设备，先绑定一张心电卡片吧。', 'circle-plus');
+          setCardBody(card, `<button class="primary-button" type="button" onclick="bindingFromEmpty()">设备绑定</button>`);
+          break;
+        }
+        case 'device-choice':
+          showDeviceChoice(false);
+          break;
+        case 'device-choice-after-bind':
+          showDeviceChoice(true);
+          break;
+        case 'measure-config': {
+          const card = createCard('测量前选择', '请选择测量对象和时长。', 'sliders-horizontal');
+          setCardBody(card, measurementConfigHtml());
+          break;
+        }
+        case 'connecting': {
+          const card = createCard('正在连接设备', '咚咚正在检查蓝牙、设备和导联状态。', 'bluetooth');
+          setCardBody(card, connectionHtml(4));
+          break;
+        }
+        case 'firmware-ready': {
+          const card = createCard('正在连接设备', '咚咚正在检查蓝牙、设备和导联状态。', 'bluetooth');
+          renderFirmwareReady(card);
+          break;
+        }
+        case 'firmware-progress': {
+          const card = createCard('正在连接设备', '咚咚正在检查蓝牙、设备和导联状态。', 'bluetooth');
+          renderFirmwareProgress(card, 'transfer', 25);
+          break;
+        }
+        case 'firmware-hold': {
+          const card = createCard('正在连接设备', '咚咚正在检查蓝牙、设备和导联状态。', 'bluetooth');
+          renderFirmwareHold(card);
+          break;
+        }
+        case 'firmware-complete': {
+          const card = createCard('正在连接设备', '咚咚正在检查蓝牙、设备和导联状态。', 'bluetooth');
+          renderFirmwareCompleted(card);
+          break;
+        }
+        case 'firmware-failed': {
+          const card = createCard('正在连接设备', '咚咚正在检查蓝牙、设备和导联状态。', 'bluetooth');
+          renderFirmwareFailed(card);
+          break;
+        }
+        case 'firmware-hold-failed': {
+          const card = createCard('正在连接设备', '咚咚正在检查蓝牙、设备和导联状态。', 'bluetooth');
+          renderFirmwareHoldFailed(card);
+          break;
+        }
+        case 'firmware-battery': {
+          const card = createCard('正在连接设备', '咚咚正在检查蓝牙、设备和导联状态。', 'bluetooth');
+          renderFirmwareBatteryLow(card);
+          break;
+        }
+        case 'measuring': {
+          const card = createCard('正在测量', '请保持手指贴合电极、手臂放松。波形短暂抖动时，先不要移动，等它恢复稳定。', 'activity');
+          setCardBody(card, measurementHtml());
+          drawWave(card.querySelector('#liveWave'), 0);
+          break;
+        }
+        case 'saving':
+          loading('正在保存本次测量', '数据保存成功后，咚咚会自动开始 AI 分析。', 'upload-cloud', '保存中，请勿关闭页面…');
+          break;
+        case 'saved': {
+          const card = createCard('正在保存本次测量', '数据保存成功后，咚咚会自动开始 AI 分析。', 'upload-cloud');
+          renderMeasurementSaved(card);
+          break;
+        }
+        case 'analyzing':
+          loading('AI 分析中', '正在生成本次心电分析摘要。', 'sparkles', '分析中，请稍候…');
+          break;
+        case 'analysis-complete': {
+          const card = createCard('AI 分析中', '正在生成本次心电分析摘要。', 'sparkles');
+          renderAnalysisCompleted(card);
+          break;
+        }
+        case 'summary': {
+          const placeholder = createCard('AI 分析中', '正在生成本次心电分析摘要。', 'sparkles');
+          showResult(placeholder);
+          placeholder.closest('.workflow-wrap').remove();
+          chat.querySelectorAll('.message').forEach(node => node.remove());
+          break;
+        }
+        case 'record-latest':
+          appendRecordEntryCard('direct', { record: heartRecords[0] });
+          break;
+        case 'record-specified':
+          appendRecordEntryCard('direct', { record: heartRecords[1] });
+          break;
+        case 'record-filtered':
+          appendRecordEntryCard('filtered', { records: heartRecords.filter(record => record.state === '已分析'), condition: '筛选条件' });
+          break;
+        case 'record-all':
+          appendRecordEntryCard('all');
+          break;
+        case 'record-empty':
+          appendRecordEntryCard('empty');
+          break;
+        case 'record-drawer':
+          openRecordDrawer(heartRecords);
+          break;
+        case 'bluetooth-error':
+          createErrorCard('请检查蓝牙设置', '', 'bluetooth', `<div class="notice"><i data-lucide="settings"></i><span>请按以下步骤检查蓝牙设置：<br>1. 打开蓝牙：进入【设置】&gt;【蓝牙】，开启蓝牙。<br>2. 允许“心脏+”使用蓝牙：进入【设置】&gt;【App】&gt;【心脏+】，开启蓝牙权限。</span></div><button class="secondary-button" type="button" onclick="checkBluetoothReady()">我已开启</button>`);
+          break;
+        case 'not-found-error':
+          createErrorCard('未搜索到设备', '暂未发现可绑定的心电卡片。', 'search-x', `<div class="notice"><i data-lucide="credit-card"></i><span>请确认心电卡片已开启并靠近手机后，再试一次。</span></div><div class="button-row"><button class="secondary-button" type="button" onclick="retrySearch()">重新搜索</button><button class="text-button" type="button" onclick="showBindingHelp()">绑定遇到问题</button></div>`);
+          break;
+        case 'bind-failed-error':
+          createErrorCard('绑定失败', '设备绑定关系尚未建立。', 'circle-x', `<div class="notice"><i data-lucide="triangle-alert"></i><span>你可以重新绑定，或向咚咚寻求帮助。</span></div><div class="button-row"><button class="secondary-button" type="button" onclick="retryBinding()">重新绑定</button><button class="text-button" type="button" onclick="showBindingHelp()">绑定遇到问题</button></div>`);
+          break;
+        case 'lead-error':
+          createErrorCard('导联连接异常', '未检测到稳定的导联接触，倒计时已停止。', 'triangle-alert', `<div class="notice"><i data-lucide="hand"></i><span>请保持手指贴合电极、手臂放松，再重新检测导联状态。</span></div><button class="secondary-button" type="button" onclick="retryConnection()">重新检测</button>`);
+          break;
+        case 'measurement-terminated': {
+          const card = createCard('正在测量', '请保持手指贴合电极、手臂放松。', 'activity');
+          renderMeasurementTerminated(card);
+          break;
+        }
+        case 'unsavable-error':
+          createErrorCard('本次测量无法保存', '请重新完成一次测量后再查看分析结果。', 'circle-x', `<div class="notice"><i data-lucide="activity"></i><span>咚咚会保留刚才选择的设备、测量对象和时长，方便你重新测量。</span></div><button class="primary-button" style="margin-top:12px" type="button" onclick="retryMeasurement()">重新测量</button>`);
+          break;
+        case 'upload-failed-error':
+          createErrorCard('上传失败', '当前测量会话已保存，尚未创建心电记录和分析任务。', 'cloud-off', `<div class="notice"><i data-lucide="wifi-off"></i><span>请检查网络后重新上传。重新上传不会影响已保存的测量数据。</span></div><button class="primary-button" style="margin-top:12px" type="button" onclick="retryUpload()">重新上传</button>`);
+          break;
+        case 'data-interference-error':
+          createErrorCard('数据干扰，无法分析', '本次心电数据受到干扰。', 'activity', `<div class="notice"><i data-lucide="activity"></i><span>请重新测量。</span></div><div class="button-stack"><button class="primary-button" type="button" onclick="retryMeasurement()">重新测量</button><button class="text-button" type="button" onclick="openDetail()">查看详情</button></div>`);
+          break;
+        default:
+          renderWelcome();
+      }
+      refreshIcons();
+    }
+
+    function drawSummaryWave(canvas, phase) {
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const width = canvas.width;
+      const height = canvas.height;
+      ctx.clearRect(0, 0, width, height);
+      ctx.strokeStyle = '#e7e7e7';
+      ctx.lineWidth = 1;
+      [0, width / 3, width * 2 / 3, width].forEach(x => {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+      });
+      ctx.strokeStyle = '#ed6266';
+      ctx.lineWidth = 3;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      for (let x = 0; x <= width; x += 4) {
+        const cycle = (x + phase * 2) % 220;
+        let y = height / 2;
+        if (cycle > 76 && cycle < 86) y -= (cycle - 76) * 3;
+        if (cycle >= 86 && cycle < 94) y += 38 - (cycle - 86) * 9;
+        if (cycle >= 94 && cycle < 105) y -= 12 - (cycle - 94) * 1.2;
+        if (cycle > 120 && cycle < 146) y -= Math.sin((cycle - 120) / 26 * Math.PI) * 11;
+        if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+
+    function drawDetailWave(canvas, phase) {
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const width = canvas.width;
+      const height = canvas.height;
+      ctx.clearRect(0, 0, width, height);
+      ctx.strokeStyle = '#d9eef5';
+      ctx.lineWidth = 1;
+      for (let x = 0; x <= width; x += 18) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke(); }
+      for (let y = 0; y <= height; y += 16) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke(); }
+      ctx.strokeStyle = '#ff6f77';
+      ctx.lineWidth = 3;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      for (let x = 0; x <= width; x += 4) {
+        const cycle = (x + phase * 2) % 145;
+        let y = height / 2;
+        if (cycle > 45 && cycle < 55) y -= (cycle - 45) * 5;
+        if (cycle >= 55 && cycle < 63) y += 50 - (cycle - 55) * 12;
+        if (cycle >= 63 && cycle < 74) y -= 15 - (cycle - 63) * 1.3;
+        if (cycle > 87 && cycle < 109) y -= Math.sin((cycle - 87) / 22 * Math.PI) * 14;
+        if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+
+    function drawWave(canvas, phase) {
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const width = canvas.width;
+      const height = canvas.height;
+      ctx.clearRect(0, 0, width, height);
+      ctx.strokeStyle = '#d7e8f7';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < width; x += 50) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke(); }
+      for (let y = 0; y < height; y += 36) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke(); }
+      ctx.strokeStyle = '#4d98df';
+      ctx.lineWidth = 4;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      for (let x = 0; x <= width; x += 5) {
+        const cycle = (x + phase * 9) % 132;
+        let y = height / 2 + Math.sin((x + phase) / 19) * 2;
+        if (cycle > 48 && cycle < 59) y -= (cycle - 48) * 4;
+        if (cycle >= 59 && cycle < 65) y += 46 - (cycle - 59) * 10;
+        if (cycle >= 65 && cycle < 73) y -= 14 - (cycle - 65) * 1.7;
+        if (cycle > 91 && cycle < 111) y -= Math.sin((cycle - 91) / 20 * Math.PI) * 13;
+        if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+
+    function sendFreeText() {
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text) { showToast('请输入想问咚咚的问题'); input.focus(); return; }
+      appendUser(text);
+      input.value = '';
+      if (resolveRecordQuery(text)) return;
+      appendAssistant('我收到啦。设备绑定和健康测量可以直接点击下方快捷操作；其他健康问题，咚咚会结合记录为你解答。');
+    }
+
+    function openDetail(record = heartRecords[0]) {
+      state.lastFocus = document.activeElement;
+      document.getElementById('detailRecordTitle').textContent = record.detailTitle;
+      document.getElementById('detailRecordDate').textContent = record.date;
+      document.getElementById('detailRateText').textContent = record.rate;
+      document.getElementById('detailDurationText').textContent = record.duration;
+      document.getElementById('detailSourceTag').innerHTML = `<i data-lucide="${recordSourceIcon(record.source)}"></i>数据来源：${record.source}`;
+      const overlay = document.getElementById('detailOverlay');
+      overlay.classList.add('open');
+      overlay.setAttribute('aria-hidden', 'false');
+      drawDetailWave(document.getElementById('detailWave'), record.seed);
+      refreshIcons();
+      document.getElementById('detailBack').focus();
+    }
+
+    function closeDetail() {
+      const overlay = document.getElementById('detailOverlay');
+      overlay.classList.remove('open');
+      overlay.setAttribute('aria-hidden', 'true');
+      const returnToDrawer = state.detailReturnDrawer;
+      state.detailReturnDrawer = false;
+      if (returnToDrawer) openRecordDrawer(state.recordDrawer.records, true);
+      else if (state.lastFocus) state.lastFocus.focus();
+    }
+
+    function prepareStandardModal() {
+      const options = document.getElementById('modalOptions');
+      options.hidden = true;
+      options.innerHTML = '';
+      document.getElementById('modalPrimary').hidden = false;
+      document.getElementById('modalSecondary').hidden = false;
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('modalBackdrop');
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden', 'true');
+      if (state.lastFocus) state.lastFocus.focus();
+    }
+
+    function backdropClose(event) {
+      if (event.target === event.currentTarget) closeModal();
+    }
+
+    function openConfirm(title, copy, confirmText, onConfirm, cancelText) {
+      state.lastFocus = document.activeElement;
+      prepareStandardModal();
+      document.getElementById('modalTitle').textContent = title;
+      document.getElementById('modalCopy').textContent = copy;
+      const primary = document.getElementById('modalPrimary');
+      primary.textContent = confirmText;
+      primary.onclick = () => { closeModal(); onConfirm(); };
+      document.getElementById('modalSecondary').textContent = cancelText || (title.includes('测量') ? '继续测量' : '继续搜索');
+      const modal = document.getElementById('modalBackdrop');
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden', 'false');
+      primary.focus();
+    }
+
+    function renderDialogPreviewV2(type) {
+      document.body.classList.add('dialog-preview');
+      const definitions = {
+        'stop-search': ['停止搜索设备确认弹窗', '停止搜索设备？', '停止后将不再搜索附近的心电贴。', '停止搜索', '继续搜索'],
+        'stop-under-five': ['不足5分钟停止测量确认弹窗', '系统提示', '本次测量时间过短，无法保存，确定退出吗？', '确定退出', '继续测量'],
+        'stop-over-five': ['达到5分钟停止测量确认弹窗', '提前停止测量？', '当前数据已达到分析条件，提前结束可能影响结果完整性。', '确认停止', '继续测量'],
+        'abandon-data': ['放弃数据确认弹窗', '放弃本次数据？', '放弃后，本次数据将不再保存，也不会进入AI分析和医生解读。', '确认放弃', '继续接收'],
+        'unbind-device': ['解绑设备确认弹窗', '解绑设备？', '解绑只解除账号与设备的关系，不会停止测量或删除已有记录。未完成任务需重新绑定同一设备后才能继续操作。', '确认解绑', '取消'],
+        'receiving-lock': ['接收中不可离开提示', '数据接收中', '请完成数据接收后再离开当前页面。接收中断时进度会保留，下次进入将优先恢复。', '继续接收', '知道了'],
+        'uploading-lock': ['上传中不可离开提示', '数据上传中', '请完成数据上传后再离开当前页面。数据已保存在本机，上传成功前不会清除设备原始数据。', '继续上传', '知道了']
+      };
+      const config = definitions[type] || definitions['stop-under-five'];
+      openConfirm(config[1], config[2], config[3], () => {}, config[4]);
+      const modal = document.querySelector('#modalBackdrop .modal');
+      modal.setAttribute('aria-label', config[0]);
+      modal.removeAttribute('aria-labelledby');
+      document.getElementById('modalBackdrop').onclick = null;
+    }
+
+    function trapFocus(event) {
+      if (event.key !== 'Tab') return;
+      const modalOpen = document.getElementById('modalBackdrop').classList.contains('open');
+      const detailOpen = document.getElementById('detailOverlay').classList.contains('open');
+      const drawerOpen = document.getElementById('recordDrawer').classList.contains('open');
+      const scope = modalOpen ? document.querySelector('#modalBackdrop .modal') : detailOpen ? document.getElementById('detailOverlay') : drawerOpen ? document.querySelector('#recordDrawer .record-drawer-sheet') : null;
+      if (!scope) return;
+      const focusable = [...scope.querySelectorAll('button, [href], input, textarea, [tabindex]:not([tabindex="-1"])')].filter(node => !node.disabled && node.offsetParent !== null);
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    }
+
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape') {
+        if (document.getElementById('modalBackdrop').classList.contains('open')) closeModal();
+        else if (document.getElementById('detailOverlay').classList.contains('open')) closeDetail();
+        else if (document.getElementById('recordDrawer').classList.contains('open')) closeRecordDrawer();
+      }
+      trapFocus(event);
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && state.isMeasuring) terminateMeasurement();
+    });
+
+    const deviceTypesV2 = {
+      card:{name:'心电卡片',model:'TE-5200Y-C',icon:'credit-card',durations:['30 秒','1 分钟','3 分钟']},
+      patch24:{name:'24小时心电贴',model:'TE-5100Y-C',icon:'heart-pulse',durations:['30 秒','1 分钟','3 分钟','24小时']},
+      watch:{name:'HELOWIN WATCH H1',model:'HELOWIN WATCH H1',icon:'watch',durations:[]},
+      patch72:{name:'72小时心电贴',model:'TE-5100Y-D1',icon:'heart-pulse',durations:['30 秒','1 分钟','3 分钟','24小时','72小时']},
+      patch7d:{name:'7天心电贴',model:'TE-5100Y-D2',icon:'heart-pulse',durations:['30 秒','1 分钟','3 分钟','24小时','72小时','7天']}
+    };
+    const bindingDeviceOrderV2=['patch24','watch','patch72','card'];
+    let selectedDeviceV2 = PrototypeState.devices.find(item=>item.type==='patch72');
+    let selectedDurationV2 = '72小时';
+    let progressTimerV2;
+
+    function deviceArtworkV2(type, compact=false) {
+      const item=deviceTypesV2[type];
+      if(type==='watch')return `<span class="device-visual watch ${compact?'compact':''}" role="img" aria-label="${item.name}外观示意图"><img class="device-product-image" src="assets/helowin-watch-h1.png" alt=""></span>`;
+      const isCard=type==='card';
+      const badge=isCard?'卡片':type==='patch24'?'24H':type==='patch72'?'72H':'7D';
+      return `<span class="device-visual ${compact?'compact':''}" role="img" aria-label="${item.name}外观示意图"><span class="device-shape ${isCard?'card':'patch'}"></span><span class="device-visual-badge">${item.model}</span></span>`;
+    }
+
+    function bindingGuideMarkupV2(type, item) {
+      if (type === 'card') {
+        return `<div class="patch-guide">${deviceArtworkV2(type,true)}<span><strong>${item.name}开机引导</strong><p>双手稳定接触卡片两侧电极，等待绿色状态灯亮起后熄灭。</p></span></div>`;
+      }
+      return `<div class="patch-guide">${deviceArtworkV2(type,true)}<span><strong>${item.name}开机引导</strong><p>确认设备已开机，并保持设备靠近手机；如无法开启，请查看该型号随附说明。</p></span></div>`;
+    }
+
+    function wearGuideMarkupV2(type, item) {
+      if (type === 'card') return bindingGuideMarkupV2(type,item);
+      if (type === 'patch24') {
+        return `<div class="patch-guide">${deviceArtworkV2(type,true)}<span><strong>${item.name}佩戴引导</strong><p>将设备与一次性电极对齐并按压，排出贴合处气泡；贴合皮肤后连接设备并观察波形。</p></span></div><div class="patch-guide-steps" aria-label="24小时心电贴使用步骤"><div class="patch-guide-step"><b>1</b><span>将设备与一次性电极对齐并按压，排出贴合处气泡。</span></div><div class="patch-guide-step"><b>2</b><span>揭开贴纸后贴到皮肤，连接后确认波形平稳。</span></div><div class="patch-guide-step"><b>3</b><span>长时间佩戴或运动前，请加贴补强膜并按压贴牢。</span></div></div>`;
+      }
+      return `<div class="patch-guide">${deviceArtworkV2(type,true)}<span><strong>${item.name}佩戴引导</strong><p>请按该型号随附说明正确佩戴，确保电极与皮肤贴合稳定；连接后确认导联和波形状态。</p></span></div><div class="notice" style="margin-top:10px"><i data-lucide="info"></i><span>不同型号的佩戴和开机方式可能不同，请以设备随附说明为准。</span></div>`;
+    }
+
+    function deviceTypeGalleryV2(action) {
+      return `<div class="device-type-gallery">${bindingDeviceOrderV2.map(key=>{const item=deviceTypesV2[key];return `<button class="device-type-tile" type="button" onclick="${action}('${key}')">${deviceArtworkV2(key)}<span class="device-type-copy"><strong>${item.name}</strong></span></button>`;}).join('')}</div>`;
+    }
+
+    function deviceTypeRowsV2(action) {
+      return `<div class="device-type-list">${bindingDeviceOrderV2.map(key=>{const item=deviceTypesV2[key];return `<button class="device-type-button" type="button" onclick="${action}('${key}')"><span class="device-icon"><i data-lucide="${item.icon}"></i></span><span><strong>${item.name}</strong><small>${item.model}</small></span><i data-lucide="chevron-right"></i></button>`;}).join('')}</div>`;
+    }
+
+    function beginBindingV2() {
+      if (resolveExistingFlow()) return;
+      appendUser('设备绑定'); appendAssistant('想绑定哪台设备？在下面选一下吧。');
+      const card=createCard('选择设备类型','请选择设备外观及型号。','layout-grid');
+      setCardBody(card,deviceTypeGalleryV2('chooseBindingTypeV2'));
+    }
+
+    function watchStepsMarkupV2(steps) {
+      return `<div class="watch-flow-steps">${steps.map((step,index)=>`<div class="watch-flow-step"><span class="watch-flow-step-number">${index+1}</span><span class="watch-flow-step-copy"><strong>${step.title}</strong>${step.detail?`<small>${step.detail}</small>`:''}</span></div>`).join('')}</div>`;
+    }
+
+    function watchBindingGuideMarkupV2() {
+      const copy=WatchFlowContent.binding;
+      return `<div class="watch-screen-sequence" aria-label="手表操作示意"><span class="watch-screen"><b>09:46</b><small>表盘下滑</small></span><span class="watch-screen"><i data-lucide="settings"></i><small>设置</small></span><span class="watch-screen"><i data-lucide="qr-code"></i><small>设备二维码</small></span></div>${watchStepsMarkupV2(copy.steps)}<button class="primary-button" style="margin-top:12px" type="button" onclick="scanWatchQrV2()">${copy.scanButton}</button>`;
+    }
+
+    function watchScanLoadingMarkupV2() {
+      return '<div class="watch-scan-frame"><i data-lucide="scan-line"></i></div><div class="searching"><span class="spinner" aria-hidden="true"></span><span>正在识别手表设备二维码…</span></div>';
+    }
+
+    function watchScanResultMarkupV2() {
+      return `<div class="watch-scan-result"><i data-lucide="circle-check"></i><span>${WatchFlowContent.name}<br>IMEI：${WatchFlowContent.imei}</span></div>`;
+    }
+
+    function watchBindingLoadingMarkupV2() {
+      return '<div class="searching"><span class="spinner" aria-hidden="true"></span><span>绑定中，请勿关闭页面…</span></div>';
+    }
+
+    function watchBindingSuccessMarkupV2() {
+      return `<div class="binding-success"><i data-lucide="circle-check"></i><span>${WatchFlowContent.binding.successDetail}</span></div>`;
+    }
+
+    function watchBindingFailureMarkupV2() {
+      const copy=WatchFlowContent.binding;
+      return `<div class="notice"><i data-lucide="triangle-alert"></i><span>${copy.failureTip}</span></div><button class="secondary-button" style="margin-top:12px" type="button" onclick="retryWatchBindingV2()">${copy.retryButton}</button>`;
+    }
+
+    function watchSelectedDeviceMarkupV2(device) {
+      return `<div class="watch-selected-device"><span class="device-icon"><i data-lucide="watch"></i></span><strong>${device.name}</strong><b>已选择</b></div>`;
+    }
+
+    function watchMeasurementGuideMarkupV2() {
+      const copy=WatchFlowContent.measurement;
+      return `<div class="watch-measure-visual"><img src="assets/watch-ecg-operation.svg" alt="佩戴手表并用另一只手的手指接触下键电极的操作演示图"></div>${watchStepsMarkupV2(copy.steps)}<div class="watch-measure-notes"><strong>注意事项</strong><ul>${copy.notes.map(note=>`<li>${note}</li>`).join('')}</ul></div><button class="primary-button" style="margin-top:12px" type="button" onclick="openWatchEcgRecordsV2()">${copy.recordButton}</button>`;
+    }
+
+    function showWatchBindingGuideV2() {
+      const copy=WatchFlowContent.binding;
+      appendAssistant(copy.guideIntro);
+      const card=createCard(copy.scanTitle,'','scan-line');
+      setCardBody(card,watchBindingGuideMarkupV2());
+    }
+
+    let watchScanStreamV2=null;
+    let watchScanTimerV2=null;
+    let watchScanPendingV2=false;
+
+    function showWatchCameraPermissionV2() {
+      const copy=WatchFlowContent.binding;
+      openConfirm(copy.cameraPermissionTitle,copy.cameraPermissionText,'去授权',()=>showToast('请在手机设置中开启“心脏+”相机权限'),'取消');
+    }
+
+    function closeWatchScannerV2(restoreGuide=true) {
+      clearTimeout(watchScanTimerV2);
+      watchScanTimerV2=null;
+      watchScanStreamV2?.getTracks().forEach(track=>track.stop());
+      watchScanStreamV2=null;
+      const video=document.getElementById('watchScannerVideo');
+      video.srcObject=null;
+      const scanner=document.getElementById('watchScanner');
+      scanner.classList.remove('open');
+      scanner.setAttribute('aria-hidden','true');
+      if(restoreGuide&&state.activeCard&&!state.activeCard.classList.contains('locked')){
+        setCardPresentation(state.activeCard,WatchFlowContent.binding.scanTitle,'','scan-line','进行中');
+        setCardBody(state.activeCard,watchBindingGuideMarkupV2());
+      }
+    }
+
+    async function scanWatchQrV2() {
+      const card=state.activeCard;
+      if(!card||card.classList.contains('locked')||watchScanPendingV2)return;
+      const copy=WatchFlowContent.binding;
+      appendUser(copy.scanButton);
+      watchScanPendingV2=true;
+      const permissionDemo=new URLSearchParams(location.search).get('cameraPermission');
+      let stream=null;
+      if(permissionDemo==='denied'){
+        watchScanPendingV2=false;
+        showWatchCameraPermissionV2();
+        return;
+      }
+      if(permissionDemo!=='granted'){
+        try{
+          if(!navigator.mediaDevices?.getUserMedia)throw new Error('camera unavailable');
+          stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false});
+        }catch{
+          watchScanPendingV2=false;
+          showWatchCameraPermissionV2();
+          return;
+        }
+      }
+      watchScanPendingV2=false;
+      if(state.activeCard!==card){stream?.getTracks().forEach(track=>track.stop());return;}
+      setCardPresentation(card,copy.scanTitle,'','scan-line','识别中');
+      setCardBody(card,watchScanLoadingMarkupV2());
+      const scanner=document.getElementById('watchScanner');
+      scanner.classList.add('open');
+      scanner.setAttribute('aria-hidden','false');
+      scanner.querySelector('.watch-scanner-close').focus();
+      watchScanStreamV2=stream;
+      if(stream)document.getElementById('watchScannerVideo').srcObject=stream;
+      watchScanTimerV2=setTimeout(()=>{
+        if(state.activeCard!==card)return;
+        if(new URLSearchParams(location.search).get('watchQrOutcome')==='invalid'){
+          closeWatchScannerV2(true);
+          showToast('未识别到手表设备二维码，请重新扫描');
+          return;
+        }
+        closeWatchScannerV2(false);
+        setCardPresentation(card,'二维码已识别','','scan-line','已识别');
+        setCardBody(card,watchScanResultMarkupV2());
+        completeActive('已识别');
+        startWatchBindingV2();
+      },1500);
+    }
+
+    function startWatchBindingV2() {
+      appendAssistant(WatchFlowContent.replies.binding);
+      const card=createCard('正在绑定手表','','link');
+      setCardBody(card,watchBindingLoadingMarkupV2());
+      setTimeout(()=>{
+        if(state.activeCard!==card)return;
+        if(new URLSearchParams(location.search).get('watchBindingOutcome')==='fail'&&!state.watchBindingFailureShown){
+          state.watchBindingFailureShown=true;
+          showWatchBindingFailureV2(card);
+          return;
+        }
+        finishWatchBindingV2(card);
+      },700);
+    }
+
+    function finishWatchBindingV2(card) {
+      if(state.activeCard!==card)return;
+      const copy=WatchFlowContent.binding;
+      setCardPresentation(card,copy.successTitle,'','circle-check','已完成');
+      setCardBody(card,watchBindingSuccessMarkupV2());
+      lockCard(card,'已完成');
+      PrototypeState.setHealthDeviceBound(WatchFlowContent.name,true);
+      const device=PrototypeState.devices.find(item=>item.type==='watch');
+      if(window.parent!==window)window.parent.postMessage({type:'ecg-device-bound',device},'*');
+      appendAssistant(WatchFlowContent.replies.bound);
+      renderMeasurementDeviceChoiceV2(true);
+    }
+
+    function showWatchBindingFailureV2(card) {
+      if(state.activeCard!==card)return;
+      setCardPresentation(card,WatchFlowContent.binding.failureTitle,'','link-2-off','需要处理','error');
+      setCardBody(card,watchBindingFailureMarkupV2());
+      appendAssistant(WatchFlowContent.replies.bindingFailed);
+      return card;
+    }
+
+    function retryWatchBindingV2() {
+      completeActive('已重试');
+      appendUser(WatchFlowContent.binding.retryButton);
+      showWatchBindingGuideV2();
+    }
+
+    function chooseBindingTypeV2(type) {
+      const item=deviceTypesV2[type]; state.selectedDeviceType=type; completeActive('已选择'); appendUser(type==='watch'?`我要绑定 ${item.name}`:`${item.name}（${item.model}）`);
+      if(type==='watch'){showWatchBindingGuideV2();return;}
+      appendAssistant(`请按引导开启${item.name}，确认设备已开机后保持设备靠近手机。`);
+      const card=createCard(`开启${item.name}`,'确认设备已开机后再开始搜索。','power');
+      setCardBody(card,`${bindingGuideMarkupV2(type,item)}<button class="primary-button" type="button" onclick="searchBindingV2()">开始搜索</button>`);
+    }
+
+    function searchBindingV2() {
+      const item=deviceTypesV2[state.selectedDeviceType]; completeActive('搜索中'); appendUser(`搜索${item.name}`); appendAssistant(`收到，咚咚正在寻找附近的${item.name}。搜索时请保持设备开启，并尽量靠近手机。`); const card=createCard('正在搜索设备','请保持设备开启并靠近手机。','radar'); setCardBody(card,searchingCardHtml());
+      setTimeout(()=>{ if(state.activeCard!==card)return; setCardPresentation(card,`发现1台${item.name}`,'请选择下方设备完成绑定。','bluetooth','可绑定'); setCardBody(card,`<button class="device-type-button" type="button" onclick="bindSelectedDeviceV2()"><span class="device-icon"><i data-lucide="${item.icon}"></i></span><span><strong>${item.name}</strong><small>${item.model} · SN：ECG-${String(Date.now()).slice(-4)}</small></span><b>绑定</b><i data-lucide="chevron-right"></i></button>`);},650);
+    }
+
+    function bindSelectedDeviceV2() {
+      const item=deviceTypesV2[state.selectedDeviceType]; completeActive('已选择'); appendUser(`绑定${item.name}`); appendAssistant(`找到了${item.name}，咚咚正在为你完成绑定，请稍等一下。`); const card=createCard('正在绑定设备','正在建立设备与当前账号的绑定关系。','link'); setCardBody(card,`<div class="searching"><span class="spinner" aria-hidden="true"></span><span>绑定中，请勿关闭页面…</span></div>`); setTimeout(()=>finishBindingV2(card),700);
+    }
+
+    function finishBindingV2(card=state.activeCard) {
+      const item=deviceTypesV2[state.selectedDeviceType]; setCardPresentation(card,`${item.name}已绑定`,'设备绑定成功，可以开始健康测量。','circle-check','绑定完成'); setCardBody(card,`<div class="binding-success"><i data-lucide="circle-check"></i><span>${item.name}（${item.model}）绑定成功</span></div>`); lockCard(card,'绑定完成'); appendAssistant('绑定完成啦！现在要不要马上做一次心电测量？'); renderMeasurementDeviceChoiceV2(true);
+      PrototypeState.setHealthDeviceBound(item.name, true);
+      window.parent?.postMessage({type:'ecg-device-bound',device:{id:`ECG-${String(Date.now()).slice(-8)}`,name:item.name,model:item.model,battery:'86%',type:state.selectedDeviceType}},'*');
+    }
+
+    function renderMeasurementDeviceChoiceV2(fromBinding=false) {
+      const card=createCard('选择测量设备',fromBinding?'设备已绑定，请选择本次要使用的设备。':'请选择本次要使用的设备。','heart-pulse'); const active=PrototypeState.getActiveTasks();
+      setCardBody(card,`<div class="device-type-list">${PrototypeState.devices.filter(device=>PrototypeState.isHealthDeviceBound(device.name)).map(device=>{const task=active.find(t=>t.deviceId===device.id);return `<button class="device-type-button" type="button" ${task?'disabled':''} onclick="selectMeasurementDeviceV2('${device.id}')"><span class="device-icon"><i data-lucide="${device.type==='card'?'credit-card':device.type==='watch'?'watch':'heart-pulse'}"></i></span><span><strong>${device.name}</strong><small>${device.type==='watch'?'IMEI '+device.imei+' · 电量'+device.battery+'%':device.model+' · 电量'+device.battery+'%'}</small></span><b>${task?(task.status==='waiting'?'待接收':'测量中'):'可测量'}</b>${task?'':'<i data-lucide="chevron-right"></i>'}</button>`}).join('')}</div><button class="text-button" style="width:100%;margin-top:8px" type="button" onclick="beginBindingV2()">绑定新设备</button>`);
+    }
+
+    function beginMeasurementV2() {
+      if (resolveExistingFlow()) return;
+      appendUser('健康测量'); appendAssistant('请选择本次要使用的设备。正在执行任务的设备暂时不能再次发起测量。');
+      renderMeasurementDeviceChoiceV2();
+    }
+
+    function selectMeasurementDeviceV2(id) {
+      selectedDeviceV2=PrototypeState.devices.find(item=>item.id===id);
+      if(selectedDeviceV2.type==='watch'&&state.activeCard)setCardBody(state.activeCard,watchSelectedDeviceMarkupV2(selectedDeviceV2));
+      completeActive('已选择');appendUser(selectedDeviceV2.type==='watch'?`使用 ${selectedDeviceV2.name} 进行心电测量`:selectedDeviceV2.name);
+      if(selectedDeviceV2.type==='watch'){showWatchMeasurementGuideV2();return;}
+      selectedDurationV2=selectedDeviceV2.type==='patch7d'?'72小时':deviceTypesV2[selectedDeviceV2.type].durations[0];const item=deviceTypesV2[selectedDeviceV2.type]; const isPatch=selectedDeviceV2.type!=='card'; appendAssistant(isPatch?`请按${item.name}的引导完成佩戴，连接后确认导联和波形状态。`:`请按图开启${item.name}。确认设备状态正常后，再设置测量对象和时长。`); const card=createCard(isPatch?`佩戴${item.name}`:`开启${item.name}`,isPatch?'完成佩戴后继续连接设备。':'开机引导与设备类型保持一致。',isPatch?'heart-pulse':'power'); setCardBody(card,`${isPatch?wearGuideMarkupV2(selectedDeviceV2.type,item):bindingGuideMarkupV2(selectedDeviceV2.type,item)}<button class="primary-button" type="button" onclick="showMeasureConfigV2()">${isPatch?'已完成佩戴':'设备已开启'}</button>`);
+    }
+
+    function showWatchMeasurementGuideV2() {
+      appendAssistant('手表准备好了吗？跟着下面的步骤操作就行，测量过程请看手表屏幕。');
+      const card=createCard('心电测量','','watch');
+      setCardBody(card,watchMeasurementGuideMarkupV2());
+    }
+
+    function openWatchEcgRecordsV2() {
+      openRecordDrawer([heartRecords.find(record=>record.id==='watch-h1'), ...heartRecords.filter(record=>record.id!=='watch-h1')]);
+    }
+
+    function showMeasureConfigV2() {
+      completeActive('已完成'); appendUser(selectedDeviceV2.type==='card'?'设备已开启':'已完成佩戴'); appendAssistant('好的，请设置本次测量对象和时长。所选时长会自动决定静态或动态测量。'); const item=deviceTypesV2[selectedDeviceV2.type]; const card=createCard('设置本次测量','所选时长将自动决定静态或动态任务。','sliders-horizontal'); state.selectedPerson='本人';
+      setCardBody(card,measureConfigMarkupV2(item));
+    }
+
+    function measureConfigMarkupV2(item) {
+      return `<label class="form-label">测量对象</label><div class="segmented"><button class="segment selected" type="button">本人</button><button class="segment" type="button" onclick="showToast('请先完善测量对象信息')">非本人</button></div><label class="form-label">测量时长</label><div class="duration-grid">${item.durations.map(d=>`<button class="duration-option ${d===selectedDurationV2?'selected':''}" type="button" onclick="selectDurationOptionV2('${d}')">${d}<small>${/[小时天]/.test(d)?'动态':'静态'}</small></button>`).join('')}</div><div class="notice" style="margin-top:11px"><i data-lucide="info"></i><span>请选择需要的测量时长，咚咚会为你开始相应测量。</span></div><button class="primary-button" style="margin-top:12px" type="button" onclick="startConfiguredMeasurementV2()">开始测量</button>`;
+    }
+
+    function selectDurationOptionV2(duration){selectedDurationV2=duration;setCardBody(state.activeCard,measureConfigMarkupV2(deviceTypesV2[selectedDeviceV2.type]));}
+
+    function startConfiguredMeasurementV2(){
+      const dynamic=/[小时天]/.test(selectedDurationV2); state.selectedDuration=selectedDurationV2; completeActive('已创建'); appendUser(`本人 · ${selectedDurationV2}`);
+      if(!dynamic){appendAssistant('这是静态心电测量，开始后不可中途结束，请保持设备与导联稳定。');const card=createCard('正在连接设备','连接成功后将自动开始静态测量。','bluetooth');setCardBody(card,`<div class="searching"><span class="spinner" aria-hidden="true"></span><span>正在连接${selectedDeviceV2.name}并确认导联状态…</span></div>`);setTimeout(()=>selectedDeviceV2.type==='card'?startMeasurement(card):startPatchStaticMeasurementV2(card),700);return;}
+      appendAssistant('已创建动态心电任务。设备确认开始记录后，即可退出App，心电贴会继续独立采集。');const card=createCard('正在启动动态测量','正在检查设备、电量和历史数据。','loader-circle');setCardBody(card,`<div class="searching"><span class="spinner"></span><span>清理缓存并下发${selectedDurationV2}任务…</span></div>`);setTimeout(()=>{const task={id:'task-new',personName:'本人',status:'measuring',planned:selectedDurationV2,elapsed:'00:00:12',remaining:selectedDurationV2==='7天'?'6天23:59:48':selectedDurationV2==='72小时'?'2天23:59:48':'23:59:48',heartRate:72,temperature:'36.5',lastSync:'刚刚',device:selectedDeviceV2};renderMeasuringTaskV2(card,task);},850);
+    }
+
+    function patchStaticMeasurementHtmlV2(){
+      const total=selectedDurationV2==='30 秒'?'00:30':selectedDurationV2==='1 分钟'?'01:00':'03:00';
+      return `<div class="dynamic-panel"><div class="dynamic-top"><span><strong>72</strong> 次/分<small>当前心率</small></span><span class="dynamic-battery">电量 ${selectedDeviceV2.battery}%</span></div>${dynamicWaveV2()}<div class="dynamic-info"><span>剩余时长<strong id="patchStaticLeftV2">${total}</strong></span><span>已测时长<strong id="patchStaticElapsedV2">00:00</strong></span><span>数据来源<strong>${selectedDeviceV2.name}</strong></span><span>导联状态<strong>连接良好</strong></span></div></div><div class="notice" style="margin-top:10px"><i data-lucide="shield-check"></i><span>静态测量需完整完成所选时长，测量过程中不可提前结束。请保持设备与导联稳定。</span></div>`;
+    }
+
+    function startPatchStaticMeasurementV2(card){
+      state.isMeasuring=true;
+      setCardPresentation(card,'静态心电测量中',`本人 · ${selectedDeviceV2.name} · ${selectedDurationV2}`,'activity','测量中');
+      setCardBody(card,patchStaticMeasurementHtmlV2());
+      requestAnimationFrame(drawDynamicWavesV2);
+      const total=selectedDurationV2==='30 秒'?30:selectedDurationV2==='1 分钟'?60:180;
+      let left=total,ticks=0;
+      const formatTime=seconds=>`${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`;
+      state.activeTimer=setInterval(()=>{
+        if(state.activeCard!==card||card.classList.contains('locked'))return clearInterval(state.activeTimer);
+        ticks+=1;left=Math.max(0,left-Math.ceil(total/5));
+        card.querySelector('#patchStaticLeftV2').textContent=formatTime(left);
+        card.querySelector('#patchStaticElapsedV2').textContent=formatTime(total-left);
+        if(left===0||ticks>=5){clearInterval(state.activeTimer);finishPatchStaticMeasurementV2(card);}
+      },650);
+    }
+
+    function finishPatchStaticMeasurementV2(card){
+      state.isMeasuring=false;
+      appendAssistant('静态测量已完成，咚咚正在保存并分析这次心电数据，请先不要关闭页面。');
+      setCardPresentation(card,'正在保存本次测量','保存成功后将自动开始AI分析。','upload-cloud','保存中');
+      setCardBody(card,`<div class="searching"><span class="spinner" aria-hidden="true"></span><span>正在保存${selectedDeviceV2.name}的心电数据…</span></div>`);
+      setTimeout(()=>{
+        setCardPresentation(card,'AI分析中','心电数据已保存，正在生成分析结果。','sparkles','分析中');
+        setCardBody(card,`<div class="searching"><span class="spinner" aria-hidden="true"></span><span>正在分析本次静态心电数据…</span></div>`);
+        setTimeout(()=>renderPatchStaticResultV2(card),900);
+      },700);
+    }
+
+    function renderPatchStaticResultV2(card){
+      setCardPresentation(card,'AI分析结果','以下结果由AI生成，仅供健康参考。','file-heart','已分析');
+      setCardBody(card,`<div class="notice"><i data-lucide="heart-pulse"></i><span>数据来源：${selectedDeviceV2.name} · 测量时长：${selectedDurationV2}</span></div><div class="analysis-metrics"><div class="analysis-metric"><span>心率变异性指数</span><strong>高</strong></div><div class="analysis-metric"><span>心脏疾病风险评估</span><strong>低风险</strong></div><div class="analysis-metric"><span>精神压力指数</span><strong>轻度</strong></div><div class="analysis-metric"><span>疲劳指数</span><strong>中度</strong></div></div><div class="analysis-actions"><button class="primary-button" type="button" onclick="openPatchStaticDetailV2()">解锁详细AI分析</button><button class="secondary-button" type="button" onclick="renderCardPreview('doctor-submit-v2')">提交医生解读</button></div>`);
+    }
+
+    function openPatchStaticDetailV2(){
+      openDetail({detailTitle:'详细AI分析',date:'今天',rate:'72次/分',duration:selectedDurationV2,source:selectedDeviceV2.name,seed:18});
+    }
+
+    function dynamicWaveV2(){return `<canvas class="dynamic-wave" width="650" height="210" aria-label="实时心电波形"></canvas>`;}
+    function drawDynamicWavesV2(){document.querySelectorAll('.dynamic-wave').forEach(canvas=>{const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);ctx.strokeStyle='#ef5c6e';ctx.lineWidth=3;ctx.beginPath();for(let x=0;x<=canvas.width;x+=3){const p=x%170;let y=108;if(p>58&&p<69)y-=(p-58)*5;else if(p>=69&&p<76)y+=55-(p-69)*12;else if(p>=76&&p<94)y-=18-(p-76);else if(p>104&&p<128)y-=Math.sin((p-104)/24*Math.PI)*10;ctx.lineTo(x,y)}ctx.stroke()})}
+
+    function renderMeasuringTaskV2(card,task){state.activeCard=card;state.currentDynamicTaskV2=task;setCardPresentation(card,'动态心电测量中',PrototypeState.taskSubject(task),'activity','测量中');setCardBody(card,`<div class="dynamic-panel"><div class="dynamic-top"><span><strong>${task.heartRate}</strong> 次/分<small>当前心率</small></span><span class="dynamic-battery">电量 ${task.device.battery}%</span></div>${dynamicWaveV2()}<div class="dynamic-info"><span>剩余时长<strong>剩 ${task.remaining}</strong></span><span>已测时长<strong>${task.elapsed}</strong></span><span>连接状态<strong>最近同步于${task.lastSync}</strong></span></div></div><div class="notice" style="margin-top:10px"><i data-lucide="shield-check"></i><span>退出App后设备仍会继续记录，重新连接后可恢复查看。</span></div><button class="secondary-button" style="width:100%;margin-top:11px" type="button" onclick="requestStopDynamicV2('${task.id}')">停止测量</button>`);requestAnimationFrame(drawDynamicWavesV2);}
+
+    function elapsedSecondsV2(value=''){
+      if(value.includes(':')){const parts=value.split(':').map(Number);return parts.reduce((sum,part)=>sum*60+part,0);}
+      const hours=Number((value.match(/(\d+)小时/)||[])[1]||0),minutes=Number((value.match(/(\d+)分/)||[])[1]||0),seconds=Number((value.match(/(\d+)秒/)||[])[1]||0);
+      return hours*3600+minutes*60+seconds;
+    }
+    function requestStopDynamicV2(taskId){
+      const task=PrototypeState.getTask(taskId)||state.currentDynamicTaskV2||PrototypeState.getTask('task-measuring');
+      if(elapsedSecondsV2(task?.elapsed)<300){
+        openConfirm('系统提示','本次测量时间过短，无法保存，确定退出吗？','确定退出',()=>renderDynamicTerminatedV2(state.activeCard,task),'继续测量');
+        return;
+      }
+      openConfirm('提前停止动态测量？','当前App已连接设备并读取到数据。提前结束可能影响结果完整性。','确认停止',()=>startReceivingV2(task),'继续测量');
+    }
+    function renderDynamicTerminatedV2(card,task){
+      if(!card)return;
+      setCardPresentation(card,'测量已终止',`${task?.personName||'本人'} · ${task?.device?.name||'心电贴'}`,'circle-x','已终止','error');
+      setCardBody(card,`<div class="notice"><i data-lucide="info"></i><span>本次测量不足5分钟，数据无法保存，不会生成心电记录，也不会进入AI分析和医生解读。</span></div><button class="primary-button" type="button" onclick="beginMeasurementV2()">重新测量</button>`);
+      window.parent?.postMessage({type:'clear-device-storage',deviceId:task?.device?.id||task?.deviceId,reason:'terminated-under-five-minutes'},'*');
+    }
+    function renderWaitingTaskV2(card,task){state.activeCard=card;setCardPresentation(card,'测量已结束',PrototypeState.taskSubject(task),'download','待接收');setCardBody(card,`<div class="dynamic-panel"><div class="dynamic-top"><span><strong>${task.elapsed}</strong><small>测量时长</small></span></div><div class="dynamic-info disconnected-info"><span>开始时间<strong>${task.startedAt}</strong></span><span>结束时间<strong>${task.endedAt||'刚刚'}</strong></span></div></div><button class="primary-button" style="margin-top:11px" type="button" onclick="connectTaskV2('${task.id}')">连接设备</button>`);}
+
+    function notifyTaskLockV2(value){window.parent?.postMessage({type:'task-lock',locked:value},'*')}
+    function startReceivingV2(task){if(!task)return;notifyTaskLockV2(true);clearInterval(progressTimerV2);const card=state.activeCard||createCard('数据接收中','正在读取设备中的动态心电数据。','download-cloud');setCardPresentation(card,'数据接收中','正在读取设备中的动态心电数据。','download-cloud','不可离开');let p=8;setCardBody(card,progressMarkupV2(p,'已接收 768 / 9,600 个数据包','预计剩余 3 分钟'));progressTimerV2=setInterval(()=>{p+=14;if(p>=100){clearInterval(progressTimerV2);startUploadingV2(card,task);return}setCardBody(card,progressMarkupV2(p,`已接收 ${Math.round(p*96).toLocaleString()} / 9,600 个数据包`,`预计剩余 ${Math.max(1,Math.ceil((100-p)/28))} 分钟`));},420)}
+    function progressMarkupV2(p,left,right){return `<div class="progress-shell"><div class="progress-fill" style="width:${p}%"></div></div><div class="progress-copy"><span>${left}</span><strong>${Math.min(100,p)}%</strong></div><div class="notice" style="margin-top:12px"><i data-lucide="shield-check"></i><span>${right}，请保持App在当前页面。</span></div>`}
+    function startUploadingV2(card,task){setCardPresentation(card,'正在上传数据','上传中，请勿关闭页面...','upload-cloud','上传中');let p=12;setCardBody(card,'<div class="searching"><span class="spinner" aria-hidden="true"></span><span>上传中，请勿关闭页面...</span></div>');progressTimerV2=setInterval(()=>{p+=18;if(p>=100){clearInterval(progressTimerV2);startAiAnalysisV2(card,task);return}},380)}
+    function startAiAnalysisV2(card,task){notifyTaskLockV2(false);setCardPresentation(card,'AI分析中','心电数据上传成功，正在生成分析结果。','sparkles','分析中');setCardBody(card,`<div class="searching"><span class="spinner"></span><span>正在分析长程心电数据，你可以先去看看其他内容。</span></div><div class="notice"><i data-lucide="circle-check"></i><span>心电数据已安全保存。</span></div>`);setTimeout(()=>renderDynamicResultV2(card,task),1300)}
+    function renderDynamicResultV2(card,task){setCardPresentation(card,'AI分析结果','以下结果由AI生成，仅供健康参考。','file-heart','已分析');setCardBody(card,`<div class="analysis-metrics"><div class="analysis-metric"><span>心率变异性指数</span><strong>高</strong></div><div class="analysis-metric"><span>心脏疾病风险评估</span><strong>低风险</strong></div><div class="analysis-metric"><span>精神压力指数</span><strong>轻度</strong></div><div class="analysis-metric"><span>疲劳指数</span><strong>中度</strong></div></div><div class="analysis-actions"><button class="primary-button" type="button" onclick="openDynamicRecordV2('ai')">解锁详细AI分析</button><button class="secondary-button" type="button" onclick="openDynamicRecordV2('doctor')">提交医生解读</button></div>`)}
+    function openDynamicRecordV2(stage){if(window.parent!==window)window.top.location.href=`dynamic-record.html?id=dynamic-001&stage=${stage}`;else window.location.href=`dynamic-record.html?id=dynamic-001&stage=${stage}`}
+    function renderTaskEmbedV2(taskId){chat.innerHTML='';appendAssistant('已为你恢复动态心电测量进度。');const task=PrototypeState.getTask(taskId)||PrototypeState.getTask('task-measuring');const card=createCard('动态心电进度','正在同步最新进度。','heart-pulse');if(task.status==='waiting')renderWaitingTaskV2(card,task);else renderMeasuringTaskV2(card,task);}
+    window.addEventListener('message',event=>{if(event.data?.type==='task-lock-notice')showToast('数据处理中，请完成接收或上传后再离开')});
+
+    beginBinding=beginBindingV2; beginMeasurement=beginMeasurementV2;
+    const pageParams = new URLSearchParams(window.location.search);
+    const previewCard = pageParams.get('preview');
+    const previewDialog = pageParams.get('dialog');
+    const drawerMode = pageParams.get('drawer');
+    const isDrawerEmbed = drawerMode === 'bind' || drawerMode === 'task';
+    if (previewCard) renderCardPreview(previewCard);
+    else if (previewDialog) { renderWelcome(); renderDialogPreviewV2(previewDialog); }
+    else if (isDrawerEmbed) { document.body.classList.add('drawer-embed'); drawerMode==='task'?renderTaskEmbedV2(pageParams.get('taskId')):beginBindingV2(); }
+    else { renderWelcome(); PrototypeShell.mount(); }
+    refreshIcons();
+  </script>
+  <script src="assets/prd-flow.js?v=20260908-1"></script>
+  
+</body>
+</html>

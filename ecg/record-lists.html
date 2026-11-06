@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#f6f5fb" />
+  <title>心脏+ - 心电记录</title>
+  <script src="assets/lucide.min.js"></script>
+  <link rel="stylesheet" href="assets/app-shell.css?v=20260901-4">
+  <link rel="stylesheet" href="assets/merged-nav.css">
+  <style>
+    :root { --bg:#f6f5fb; --surface:#fff; --ink:#22242c; --muted:#7f818b; --blue:#64a8f0; --line:#e7e7ed; --green:#55d4ab; --orange:#ffad5c; }
+    * { box-sizing:border-box; } body { min-height:100dvh; margin:0; display:grid; place-items:center; background:#eceaf2; color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif; -webkit-font-smoothing:antialiased; }
+    button { font:inherit; cursor:pointer; touch-action:manipulation; } button:focus-visible { outline:3px solid rgba(100,168,240,.45); outline-offset:3px; }
+    .phone { width:min(100vw,375px); height:min(100dvh,812px); min-height:640px; position:relative; overflow:hidden; background:var(--bg); box-shadow:0 18px 48px rgba(51,44,77,.18); }
+    .scroll { height:100%; overflow-y:auto; padding:0 16px 30px; scrollbar-width:none; }.scroll::-webkit-scrollbar { display:none; }
+    .status { height:47px; display:flex; align-items:flex-end; justify-content:space-between; padding:0 8px 8px; color:#08090d; font-size:16px; font-weight:800; }.status-icons { display:flex; align-items:center; gap:5px; }.status-icons i { width:17px; height:17px; stroke-width:2.7; }.battery { width:23px; height:11px; position:relative; border:1.7px solid #08090d; border-radius:3px; margin-left:3px; }.battery::before { content:""; position:absolute; inset:2px; border-radius:1px; background:#08090d; }.battery::after { content:""; position:absolute; top:3px; right:-4px; width:2px; height:4px; border-radius:0 2px 2px 0; background:#08090d; }
+    .header { height:73px; position:relative; display:flex; align-items:center; justify-content:space-between; }.header h1 { position:absolute; left:50%; margin:0; transform:translateX(-50%); font-size:20px; white-space:nowrap; }.back { width:36px; height:36px; display:grid; place-items:center; border:0; border-radius:50%; color:#30333c; background:transparent; }.back i { width:24px; height:24px; }.filter-trigger { min-height:34px; display:inline-flex; align-items:center; gap:4px; padding:0 9px; border:1px solid #d8e9fb; border-radius:17px; color:#397fbe; background:#f6fbff; font-size:12px; font-weight:700; }.filter-trigger i { width:14px; height:14px; }
+    .status-tabs { display:grid; grid-template-columns:1fr 1fr; min-height:59px; margin:6px 4px 11px; padding:7px; border:1px solid #fff; border-radius:30px; background:#efeff5; box-shadow:0 9px 16px rgba(65,58,85,.11); }.status-tab { border:0; border-radius:23px; color:#262830; background:transparent; font-size:18px; font-weight:700; }.status-tab.active { background:#fff; box-shadow:0 2px 6px rgba(62,56,82,.03); }
+    .filter-menu { position:absolute; z-index:5; top:104px; right:16px; left:16px; width:auto; padding:13px; border:1px solid #e2e4ea; border-radius:18px; background:#fff; box-shadow:0 12px 24px rgba(65,58,85,.15); }.filter-menu[hidden] { display:none; }.filter-group{display:flex;align-items:center;flex-wrap:wrap;gap:8px}.filter-group + .filter-group{margin-top:12px;padding-top:12px;border-top:1px solid #ececf1}.filter-label{flex:0 0 100%;margin:0;color:#8f929c;font-size:11px;font-weight:700}.filter-option { width:auto; min-height:32px; flex:0 0 auto; padding:0 13px; border:0; border-radius:16px; color:#626672; background:#f5f6f9; text-align:center; font-size:12px; white-space:nowrap; }.filter-option.active { color:#2f7dcc; background:#eaf4ff; font-weight:700; }
+    .records { display:grid; gap:12px; }.record { padding:16px; border:0; border-radius:24px; color:var(--ink); background:var(--surface); box-shadow:0 10px 23px rgba(65,58,85,.08); text-align:left; }.record:active { transform:scale(.99); }.record-top { display:flex; align-items:center; justify-content:space-between; gap:10px; }.record-title { margin:0; font-size:18px; line-height:1.35; }.record-time { color:#92949d; font-size:13px; white-space:nowrap; }.record-meta { display:flex; align-items:center; gap:8px; min-height:35px; margin-top:9px; }.record-meta > span:first-child { min-width:0; flex:1; color:#3b3e47; font-size:14px; }.tag { padding:5px 8px; border-radius:7px; font-size:12px; font-weight:700; white-space:nowrap; }.tag.analysis { color:#6aa7f4; background:#f3f8ff; }.tag.read { color:#59d3ad; background:#effcf7; }.tag.pending { color:#ff9b50; background:#fff6ed; }.wave { width:100%; height:98px; display:block; margin-top:5px; border:1px solid #d7d7dc; border-radius:7px; background:#fff; }.record-footer { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:7px; color:#989ba5; font-size:11px; }.source-tag { display:inline-flex; align-items:center; gap:3px; color:#7b8ba0; white-space:nowrap; }.source-tag i { width:13px; height:13px; color:#6e95bf; }.empty { display:none; padding:46px 16px; color:#777b87; text-align:center; }.empty i { width:44px; height:44px; color:#b8c8d9; }.empty h2 { margin:10px 0 5px; color:#454852; font-size:17px; }.empty p { margin:0; font-size:13px; }.toast { position:absolute; z-index:10; bottom:30px; left:50%; max-width:calc(100% - 48px); transform:translate(-50%,16px); padding:10px 13px; border-radius:12px; color:#fff; background:rgba(32,34,42,.9); font-size:13px; opacity:0; pointer-events:none; transition:opacity .18s ease,transform .18s ease; }.toast.show { opacity:1; transform:translate(-50%,0); }
+    .scroll{padding-bottom:45px}
+    @media (max-width:375px) { .phone { height:100dvh; min-height:100dvh; } }
+  </style>
+</head>
+<body>
+  <main class="phone ecg-shell" aria-label="心电记录列表">
+    <section class="scroll">
+      <div class="status"><span>10:30</span><span class="status-icons"><i data-lucide="signal-high"></i><i data-lucide="wifi"></i><span class="battery"></span></span></div>
+      <header class="header"><button class="back" type="button" aria-label="返回上一页" onclick="goBack()"><i data-lucide="chevron-left"></i></button><h1 id="pageTitle">心电图记录</h1><button id="filterTrigger" class="filter-trigger" type="button" aria-label="筛选心电记录" aria-expanded="false" onclick="toggleFilter()"><i data-lucide="sliders-horizontal"></i><span id="filterCurrent">全部数据</span></button></header>
+      <nav id="statusTabs" class="status-tabs" aria-label="记录状态"></nav>
+      <section id="records" class="records" aria-label="记录列表"></section>
+      <section id="empty" class="empty"><i data-lucide="inbox"></i><h2>暂无相关记录</h2><p>换个筛选条件试试吧。</p></section>
+    </section>
+    <section id="filterMenu" class="filter-menu" aria-label="数据来源筛选" hidden></section>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  </main>
+  <script src="assets/prototype-state.js?v=20260901-3"></script><script src="assets/app-shell.js?v=20260901-3"></script><script>
+    const view = new URLSearchParams(window.location.search).get('view') === 'doctor' ? 'doctor' : 'ecg';
+    const config = view === 'doctor' ? { title:'医生解读服务', tabs:['已解读','未解读'] } : { title:'心电图记录', tabs:['已解锁','未解锁'] };
+    const data = {
+      ecg: [
+        { id:'watch-001', type:'静态', title:'窦性心律', time:'今天 10:42', source:'HELOWIN WATCH H1', tab:'已解锁', state:'AI分析完成', rate:'平均73次/分', duration:'30 秒' },
+        { id:'dynamic-001', type:'动态', title:'窦性心律', time:'今天 09:28', source:'72小时心电贴', tab:'已解锁', state:'已解锁', rate:'平均73次/分', duration:'72小时' },
+        { id:'dynamic-002', type:'动态', title:'窦性心律', time:'昨天 18:36', source:'24小时心电贴', tab:'未解锁', state:'AI分析中', rate:'平均71次/分', duration:'24小时' },
+        { type:'静态', title:'窦性心律', time:'今天 14:03', source:'心电卡片', tab:'已解锁', state:'已解锁', rate:'平均76次/分', duration:'30 秒' },
+        { type:'静态', title:'窦性心律', time:'7月11日 20:16', source:'心电卡片', tab:'已解锁', state:'已解锁', rate:'平均78次/分', duration:'3 分钟' }
+      ],
+      doctor: [
+        { id:'dynamic-003', type:'动态', title:'窦性心律', time:'8月22日 08:15', source:'7天心电贴', state:'已解读', rate:'平均72次/分', duration:'7天', read:true },
+        { id:'dynamic-001', type:'动态', title:'窦性心律', time:'今天 09:28', source:'72小时心电贴', state:'未解读', rate:'平均73次/分', duration:'72小时' },
+        { type:'静态', title:'窦性心律', time:'今天 14:03', source:'心电卡片', state:'未解读', rate:'平均76次/分', duration:'30 秒', pending:true },
+        { type:'静态', title:'窦性心律', time:'7月11日 20:16', source:'心电卡片', state:'已解读', rate:'平均78次/分', duration:'3 分钟', read:true }
+      ]
+    };
+    let activeTab = config.tabs[0];
+    let activeSource = '全部来源';
+    let toastTimer;
+    document.title = `心脏+ - ${config.title}`;
+    document.getElementById('pageTitle').textContent = config.title;
+
+    function refreshIcons() { window.lucide && window.lucide.createIcons({ attrs:{ 'stroke-width':2 } }); }
+    function showToast(text) { const toast = document.getElementById('toast'); toast.textContent = text; toast.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove('show'), 1600); }
+    function goBack() { const from=new URLSearchParams(location.search).get('from'); if(from==='assistant-overlay'){window.parent.postMessage({type:'close-watch-records'},'*');return} window.location.href=from==='health'?'../index.html#/home':from==='assistant'?'index.html':'device-management.html'; }
+    function renderTabs() { document.getElementById('statusTabs').innerHTML = config.tabs.map(tab => `<button class="status-tab ${tab === activeTab ? 'active' : ''}" type="button" onclick="setTab('${tab}')">${tab}</button>`).join(''); }
+    function toggleFilter() { const menu = document.getElementById('filterMenu'); const nextOpen = menu.hidden; menu.hidden = !nextOpen; document.getElementById('filterTrigger').setAttribute('aria-expanded', String(nextOpen)); }
+    function setFilter(value) { activeSource=value; document.getElementById('filterMenu').hidden = true; document.getElementById('filterTrigger').setAttribute('aria-expanded', 'false'); render(); }
+    function filterButtons(items,active){return items.map(item=>`<button class="filter-option ${item===active?'active':''}" type="button" onclick="setFilter('${item}')">${item}</button>`).join('')}
+    function renderFilterMenu() { const menu = document.getElementById('filterMenu'); menu.innerHTML = `<section class="filter-group" aria-label="数据来源"><p class="filter-label">数据来源</p>${filterButtons(['全部来源','HELOWIN WATCH H1','Apple Watch','心电卡片','24小时心电贴','72小时心电贴','7天心电贴'],activeSource)}</section>`; document.getElementById('filterCurrent').textContent=activeSource==='全部来源'?'全部数据':activeSource; }
+    function setTab(tab) { activeTab = tab; render(); }
+    function sourceIcon(source) { return source.includes('心电贴') ? 'heart-pulse' : source.includes('WATCH') ? 'watch' : 'credit-card'; }
+    function renderWave(canvas, seed) { const ctx = canvas.getContext('2d'); const w = canvas.width; const h = canvas.height; ctx.clearRect(0,0,w,h); ctx.strokeStyle='#d6d6d9'; ctx.lineWidth=1; [w/3,w*2/3].forEach(x => { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke(); }); ctx.strokeStyle='#f23a3d'; ctx.lineWidth=3; ctx.lineJoin='round'; ctx.lineCap='round'; ctx.beginPath(); for(let x=0;x<=w;x+=3){ const phase=(x+seed)%190; let y=h/2; if(phase>65&&phase<76)y-=(phase-65)*2; else if(phase>=76&&phase<83)y+=32-(phase-76)*7; else if(phase>=83&&phase<96)y-=12-(phase-83); else if(phase>=105&&phase<124)y-=Math.sin((phase-105)/19*Math.PI)*8; ctx.lineTo(x,y); } ctx.stroke(); }
+    function render() {
+      renderTabs(); renderFilterMenu();
+      const list = data[view].filter(item => (item.tab || item.state) === activeTab && (activeSource==='全部来源'||item.source===activeSource)).sort((a,b) => view === 'ecg' ? Number(b.state === 'AI分析中') - Number(a.state === 'AI分析中') : 0); const container = document.getElementById('records');
+      container.innerHTML = list.map((item,index) => `<button class="record" type="button" onclick="${view==='ecg'&&item.state==='AI分析中'?`showToast('AI分析中')`:item.id==='watch-001'?`window.location.href='watch-record.html?from=${new URLSearchParams(location.search).get('from') || 'assistant'}'`:item.type==='动态'?`window.location.href='dynamic-record.html?id=${item.id}&stage=${view==='doctor'?'doctor':'ai'}'`:`showToast('${view === 'doctor' ? '暂无更多解读信息' : '暂无更多心电详情'}')`}"><div class="record-top"><h2 class="record-title">${item.title}</h2><span class="record-time">${item.time}</span></div><div class="record-meta"><span>心电图监测　${item.rate}</span>${item.pending ? '<span class="tag pending">解读中</span>' : ''}${item.read ? '<span class="tag read">已解读</span>' : ''}${view === 'ecg' ? `<span class="tag analysis">${item.state}</span>` : ''}</div><canvas class="wave" width="640" height="180" data-seed="${index * 31 + (item.source === 'Apple Watch' ? 40 : 8)}" aria-label="心电波形图"></canvas><div class="record-footer"><span>测量时长 ${item.duration}</span><span class="source-tag"><i data-lucide="${sourceIcon(item.source)}"></i>数据来源：${item.source}</span></div></button>`).join('');
+      document.getElementById('empty').style.display = list.length ? 'none' : 'block'; refreshIcons(); container.querySelectorAll('canvas').forEach(canvas => renderWave(canvas, Number(canvas.dataset.seed))); }
+    render();
+  </script>
+</body>
+</html>

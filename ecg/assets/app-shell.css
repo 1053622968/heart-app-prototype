@@ -1,0 +1,21 @@
+.guardian-entry{position:absolute;z-index:12;left:50%;bottom:104px;width:calc(100% - 32px);min-height:58px;transform:translateX(-50%);display:flex;align-items:center;gap:11px;padding:9px 13px;border:0;border-radius:18px;color:#252836;background:rgba(255,255,255,.97);box-shadow:0 10px 28px rgba(76,67,112,.17);text-align:left;backdrop-filter:blur(12px)}
+.guardian-symbol{position:relative;width:40px;height:40px;display:grid;place-items:center;flex:0 0 auto;border-radius:14px;color:#fff;background:linear-gradient(145deg,#68b9f6,#9a7cf6)}
+.guardian-symbol::after{content:"";position:absolute;inset:-4px;border:1px solid rgba(112,166,242,.3);border-radius:17px;animation:guardianPulse 2.4s ease-out infinite}
+.guardian-symbol svg{width:22px;height:22px}.guardian-copy{min-width:0;flex:1}.guardian-line1{display:block;font-size:14px;font-weight:800;line-height:1.35}.guardian-line2{display:block;margin-top:3px;color:#777b88;font-size:12px;line-height:1.35}.guardian-entry>svg{width:18px;color:#b9bbc5}
+.guardian-entry.waiting .guardian-symbol{background:linear-gradient(145deg,#f2a24e,#f17d62)}
+@keyframes guardianPulse{0%{opacity:.8;transform:scale(.92)}70%,100%{opacity:0;transform:scale(1.18)}}
+.ai-shell-backdrop{position:absolute;z-index:60;inset:0;display:none;background:rgba(35,31,49,.42)}.ai-shell-backdrop.open{display:block}
+.ai-shell-drawer{position:absolute;right:0;bottom:0;left:0;height:min(88%,720px);display:flex;flex-direction:column;overflow:hidden;border-radius:27px 27px 0 0;background:#f6f5fb;box-shadow:0 -16px 38px rgba(45,38,69,.22);animation:shellUp .24s ease-out}
+.ai-shell-head{min-height:61px;display:flex;align-items:center;gap:9px;padding:10px 15px;background:#fff}.ai-shell-head img{width:31px;height:31px;padding:2px;border-radius:50%;background:#ece4ff;object-fit:contain}.ai-shell-head strong{flex:1;font-size:16px}.ai-shell-close{width:35px;height:35px;display:grid;place-items:center;border:0;border-radius:50%;color:#525661;background:#f1f2f6}.ai-shell-close[hidden]{display:none}.ai-shell-close svg{width:18px}.ai-shell-frame{width:100%;flex:1;border:0;background:#f6f5fb}
+.task-picker{position:absolute;z-index:70;right:12px;bottom:18px;left:12px;max-height:72%;overflow:auto;padding:8px 16px 22px;border-radius:25px;background:#f7f6fb;box-shadow:0 16px 44px rgba(37,31,55,.28)}.task-picker-head{display:flex;align-items:center;justify-content:space-between;padding:8px 2px 10px}.task-picker-head h2{margin:0;font-size:18px}.task-picker-head button{width:34px;height:34px;display:grid;place-items:center;border:0;border-radius:50%;background:#fff}.task-picker-item{width:100%;display:flex;align-items:center;gap:11px;margin-top:10px;padding:13px;border:0;border-radius:18px;color:#252832;background:#fff;box-shadow:0 7px 18px rgba(63,57,85,.07);text-align:left}.task-picker-icon{width:40px;height:40px;display:grid;place-items:center;flex:0 0 auto;border-radius:13px;color:#438bd4;background:#eaf5ff}.task-picker-item.waiting .task-picker-icon{color:#cf762d;background:#fff2e5}.task-picker-copy{min-width:0;flex:1}.task-picker-copy strong{display:block;font-size:14px}.task-picker-copy span{display:block;margin-top:4px;color:#777b88;font-size:12px}.task-picker-item>svg{width:18px;color:#b7bac3}
+@keyframes shellUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){.guardian-symbol::after,.ai-shell-drawer{animation:none}}
+.guardian-entry{display:none!important}
+.review-rail{display:none}
+@media(min-width:760px){
+  .review-rail{position:fixed;z-index:80;top:50%;left:calc(50% + 207px);display:grid;gap:8px;width:124px;padding:10px;border:1px solid rgba(91,100,126,.14);border-radius:18px;background:#fff;box-shadow:0 12px 28px rgba(46,43,67,.13);transform:translateY(-50%)}
+  .review-rail-label{padding:2px 4px 3px;color:#7a7e8b;font-size:11px;font-weight:700;text-align:center}
+  .review-rail a{min-height:42px;display:flex;align-items:center;justify-content:center;border:1px solid #dfeaf7;border-radius:13px;color:#337ec5;background:#f5faff;font-size:14px;font-weight:800;text-decoration:none}
+  .review-rail a:hover{background:#eaf5ff}
+  .review-rail a:focus-visible{outline:3px solid rgba(58,143,222,.36);outline-offset:2px}
+}

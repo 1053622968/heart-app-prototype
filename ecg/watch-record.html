@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f5fb">
+  <title>心脏+ - 心电图详情</title>
+  <link rel="stylesheet" href="assets/app-shell.css?v=20260901-4">
+  <link rel="stylesheet" href="assets/merged-nav.css">
+  <style>
+    :root{--bg:#f6f5fb;--ink:#252831;--muted:#8992a5;--line:#e8ebf2;--blue:#347cf4}
+    *{box-sizing:border-box}
+    body{min-height:100dvh;margin:0;display:grid;place-items:center;background:#eceaf2;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+    button{font:inherit;cursor:pointer}
+    button:focus-visible{outline:3px solid #82b7ff;outline-offset:2px}
+    .phone{position:relative;width:min(100vw,375px);height:min(100dvh,812px);min-height:640px;overflow:hidden;background:var(--bg);box-shadow:0 18px 48px rgba(51,44,77,.18)}
+    .scroll{height:100%;overflow-y:auto;padding:0 16px 38px;scrollbar-width:none}.scroll::-webkit-scrollbar{display:none}
+    .status{height:47px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 8px 8px;color:#08090d;font-size:16px;font-weight:800}
+    .status-icons{display:flex;align-items:center;gap:5px}.signal{font-size:14px;letter-spacing:-2px}.wifi{font-size:14px}.battery{width:23px;height:11px;border:1.7px solid #08090d;border-radius:3px;padding:2px}.battery::before{content:"";display:block;width:100%;height:100%;border-radius:1px;background:#08090d}
+    .header{min-height:70px;display:flex;align-items:center;gap:12px}.back{width:36px;height:36px;flex:none;border:0;border-radius:50%;background:transparent;color:#30333c;font-size:27px;line-height:1}.header h1{margin:0;font-size:21px}
+    .card{margin-top:14px;padding:18px;border-radius:24px;background:#fff;box-shadow:0 10px 23px rgba(65,58,85,.08)}
+    .record-top{display:flex;align-items:center;justify-content:space-between;gap:8px}.record-top h2{margin:0;font-size:20px}.state{padding:5px 9px;border-radius:9px;background:#e8f8f2;color:#2c9b72;font-size:12px;font-weight:750}
+    .time{margin:8px 0 0;color:var(--muted);font-size:13px}.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;color:#66748d;font-size:12px}.meta span{padding:6px 9px;border-radius:9px;background:#f5f7fb}
+    .wave{display:block;width:100%;height:145px;margin-top:16px;border:1px solid #e4e9f1;border-radius:11px;background:#fff}
+    .card h3{margin:0 0 15px;font-size:17px}.result{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;border-top:1px solid var(--line);font-size:14px}.result:first-of-type{border-top:0}.result strong{font-size:14px}.tag{min-width:54px;padding:4px 7px;border-radius:7px;text-align:center;font-size:12px;font-weight:750}.tag.red{background:#ff8290;color:#fff}.tag.green{background:#66d7ad;color:#fff}.tag.yellow{background:#f2cd4e;color:#fff}
+    .note{margin:14px 2px 0;color:#9aa2b0;font-size:11px}
+    @media(max-width:375px){.phone{height:100dvh;min-height:100dvh;box-shadow:none}}
+  </style>
+</head>
+<body>
+  <main class="phone ecg-shell" aria-label="HELOWIN WATCH H1 心电图详情">
+    <div class="scroll">
+      <div class="status"><span>11:00</span><span class="status-icons" aria-hidden="true"><span class="signal">▂▄▆█</span><span class="wifi">◕</span><span class="battery"></span></span></div>
+      <header class="header"><button id="back" class="back" type="button" aria-label="返回心电图记录">‹</button><h1>心电图详情</h1></header>
+      <section class="card" aria-label="心电测量记录">
+        <div class="record-top"><h2>窦性心律</h2><span class="state">AI分析完成</span></div>
+        <p class="time">今天 10:42</p>
+        <div class="meta"><span>HELOWIN WATCH H1</span><span>测量时长 30 秒</span><span>平均心率 73 次/分</span></div>
+        <svg class="wave" viewBox="0 0 640 145" role="img" aria-label="本次心电波形图">
+          <path d="M0 36H640M0 73H640M0 109H640M106 0V145M213 0V145M320 0V145M427 0V145M534 0V145" fill="none" stroke="#edf0f4" stroke-width="1"/>
+          <path d="M0 76 L42 76 Q48 76 52 70 Q57 65 62 76 L82 76 L88 82 L94 36 L100 100 L106 76 Q116 76 122 70 Q135 58 148 76 L196 76 Q202 76 206 70 Q211 65 216 76 L236 76 L242 82 L248 34 L254 101 L260 76 Q270 76 276 70 Q289 58 302 76 L350 76 Q356 76 360 70 Q365 65 370 76 L390 76 L396 82 L402 37 L408 99 L414 76 Q424 76 430 70 Q443 58 456 76 L504 76 Q510 76 514 70 Q519 65 524 76 L544 76 L550 82 L556 35 L562 101 L568 76 Q578 76 584 70 Q597 58 610 76 L640 76" fill="none" stroke="#ff666d" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </section>
+      <section class="card" aria-label="AI分析摘要">
+        <h3>AI分析摘要</h3>
+        <div class="result"><span>心率变异性指数</span><span class="tag red">高</span></div>
+        <div class="result"><span>心脏疾病风险评估</span><span class="tag green">低风险</span></div>
+        <div class="result"><span>精神压力指数</span><span class="tag green">轻度</span></div>
+        <div class="result"><span>疲劳指数</span><span class="tag yellow">中度</span></div>
+      </section>
+      <p class="note">内容由AI生成</p>
+    </div>
+  </main>
+  <script>
+    const from=new URLSearchParams(location.search).get('from')||'assistant';
+    document.getElementById('back').addEventListener('click',()=>{location.href=`record-lists.html?view=ecg&from=${encodeURIComponent(from)}`});
+  </script>
+</body>
+</html>

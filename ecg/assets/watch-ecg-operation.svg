@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 190" role="img" aria-labelledby="title desc">
+  <title id="title">手表心电测量操作演示</title>
+  <desc id="desc">手表佩戴在手腕上，另一只手的食指轻触手表侧面的下键电极。</desc>
+  <rect width="360" height="190" rx="14" fill="#f5f8fc"/>
+  <g fill="#fff" stroke="#59667b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8 62h88c16 0 28-3 40-8l49-20c9-4 19-4 27 1l8 5 24-2c8-1 14 4 14 11 0 4-2 7-5 9l19-1c9 0 14 5 14 12 0 5-3 9-8 11l11 1c8 1 13 5 13 12 0 6-4 11-10 12l-13 2c5 2 7 5 7 10 0 6-5 11-12 12l-56 10c-15 3-28 2-42-1l-38-10c-16-4-29-5-42-5H8"/>
+    <path d="M252 58l-20 2M268 81l-30 3M270 107l-32 5" fill="none" stroke-width="1.8"/>
+  </g>
+  <g stroke="#283446" stroke-linejoin="round">
+    <rect x="105" y="42" width="51" height="110" rx="12" fill="#222c3e"/>
+    <rect x="109" y="34" width="43" height="17" rx="6" fill="#dce5f2" stroke-width="1.8"/>
+    <rect x="109" y="143" width="43" height="17" rx="6" fill="#dce5f2" stroke-width="1.8"/>
+    <rect x="109" y="52" width="43" height="90" rx="11" fill="#1b2231" stroke-width="2.5"/>
+    <path d="M118 99h9l5-11 7 23 5-12h5" fill="none" stroke="#67d1c0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="161" cy="100" r="4" fill="#75c7f4" stroke-width="1.5"/>
+  </g>
+  <g fill="#fff" stroke="#59667b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M232 190c-1-20-7-38-17-52l-25-33c-5-6-10-8-15-7-4 1-7 5-6 9 1 4 5 8 9 11l19 26-17-13c-6-5-11-5-15-2-4 3-4 8-1 12l14 17-9-6c-5-3-10-2-12 2-2 4 0 8 3 11l31 25"/>
+    <path d="M235 190c6-19 13-31 15-46 2-12-1-25-8-36" fill="none"/>
+  </g>
+  <circle cx="163" cy="101" r="12" fill="none" stroke="#67aefa" stroke-width="2" stroke-dasharray="3 4"/>
+  <path d="M174 101h27" stroke="#67aefa" stroke-width="1.5" stroke-dasharray="3 3"/>
+</svg>

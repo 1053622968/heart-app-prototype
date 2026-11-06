@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#f6f5fb" />
+  <title>心脏+ - 健康设备管理</title>
+  <script src="assets/lucide.min.js"></script>
+  <link rel="stylesheet" href="assets/app-shell.css?v=20260901-4" />
+  <link rel="stylesheet" href="assets/merged-nav.css" />
+  <script src="assets/merged-nav.js" defer></script>
+  <style>
+    :root { --bg:#f6f5fb; --surface:#fff; --ink:#22242c; --muted:#777a87; --line:#ecebf1; --blue:#62a7ef; --blue-deep:#267bcc; --purple:#a88afb; --success:#35a783; --danger:#df786e; --shadow:0 13px 28px rgba(62,56,83,.09); }
+    * { box-sizing:border-box; }
+    body { min-height:100dvh; margin:0; display:grid; place-items:center; color:var(--ink); background:#eceaf2; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif; -webkit-font-smoothing:antialiased; }
+    button { font:inherit; cursor:pointer; touch-action:manipulation; }
+    button:focus-visible { outline:3px solid rgba(98,167,239,.45); outline-offset:3px; }
+    .phone { width:min(100vw,375px); height:min(100dvh,812px); min-height:640px; position:relative; overflow:hidden; background:var(--bg); box-shadow:0 18px 48px rgba(51,44,77,.18); }
+    .screen { position:absolute; inset:0; overflow-y:auto; padding:0 16px 130px; scrollbar-width:none; }
+    .screen::-webkit-scrollbar { display:none; }
+    .status { height:45px; display:flex; align-items:flex-end; justify-content:space-between; padding:0 8px 7px; color:#08090d; font-size:16px; font-weight:800; }
+    .status-icons { display:flex; align-items:center; gap:5px; }
+    .status-icons i { width:17px; height:17px; stroke-width:2.7; }
+    .battery { width:23px; height:11px; position:relative; border:1.7px solid #08090d; border-radius:3px; margin-left:3px; }
+    .battery::before { content:""; position:absolute; inset:2px; border-radius:1px; background:#08090d; }
+    .battery::after { content:""; position:absolute; right:-4px; top:3px; width:2px; height:4px; border-radius:0 2px 2px 0; background:#08090d; }
+    .profile { display:grid; grid-template-columns:74px 1fr auto; align-items:center; gap:12px; margin:25px 6px 25px; }
+    .avatar { width:70px; height:70px; display:grid; place-items:center; border:2px solid #fff; border-radius:50%; color:#5f3675; background:linear-gradient(155deg,#e679ff 0%,#fae08d 100%); box-shadow:0 5px 14px rgba(92,73,132,.1); }
+    .avatar i { width:42px; height:42px; stroke-width:2.5; }
+    .profile-name { display:flex; align-items:center; gap:4px; font-size:20px; font-weight:750; }
+    .profile-name i { width:18px; color:#b9bbc3; }
+    .profile-phone { margin-top:5px; font-size:17px; font-weight:650; }
+    .mileage { min-width:105px; text-align:right; }
+    .mileage-label { display:flex; align-items:center; justify-content:flex-end; gap:3px; font-size:13px; }
+    .mileage-label i { width:17px; color:#de9a25; }
+    .mileage strong { display:block; margin-top:2px; font-size:25px; line-height:1; letter-spacing:0; }
+    .membership { min-height:72px; display:flex; align-items:center; justify-content:space-between; padding:0 15px 0 18px; border:0; border-radius:22px; color:#fff; background:linear-gradient(120deg,#64adee,#977ef7); box-shadow:0 12px 20px rgba(94,135,220,.22); width:100%; text-align:left; }
+    .membership span { display:flex; align-items:center; gap:9px; font-size:19px; font-weight:750; }
+    .membership i { width:27px; height:27px; fill:#fff; }
+    .membership b { padding:8px 13px; border:2px solid rgba(255,255,255,.7); border-radius:20px; color:#dce9ff; background:rgba(255,255,255,.28); font-size:14px; }
+    .mini-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:10px 0; }
+    .mini-tile { min-height:88px; padding:15px 16px; border-radius:23px; background:var(--surface); box-shadow:var(--shadow); }
+    .mini-tile h2 { margin:0; font-size:19px; }
+    .mini-tile p { margin:7px 0 0; color:#777a87; font-size:13px; }
+    .mini-tile strong { color:#fa6c71; font-weight:750; }
+    .list-group { margin-top:10px; padding:8px 16px; border-radius:25px; background:var(--surface); box-shadow:var(--shadow); }
+    .list-row { width:100%; min-height:55px; display:flex; align-items:center; gap:13px; padding:8px 0; border:0; border-bottom:1px solid var(--line); color:var(--ink); background:transparent; text-align:left; }
+    .list-row:last-child { border-bottom:0; }
+    .row-icon { width:30px; height:30px; display:grid; flex:0 0 auto; place-items:center; border-radius:9px; color:#fff; background:#82b9f5; }
+    .row-icon i { width:19px; height:19px; }
+    .row-icon.green { background:#67deb6; }.row-icon.red { background:#ff8888; }.row-icon.rose { background:#ff8189; }.row-icon.sky { background:#8cc0fb; }
+    .row-label { flex:1; font-size:17px; font-weight:650; }
+    .list-row > i { width:21px; color:#c7c8cf; }
+    .nav { position:absolute; z-index:5; right:16px; bottom:12px; left:16px; height:82px; display:grid; grid-template-columns:repeat(5,1fr); align-items:center; padding:4px 8px; border-radius:42px; background:rgba(255,255,255,.97); box-shadow:0 10px 25px rgba(65,58,85,.09); }.nav[hidden], .manage-bottom-action[hidden] { display:none !important; }
+    .nav button { min-height:60px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; border:0; border-radius:14px; color:#88888e; background:transparent; font-size:12px; }
+    .nav i { width:22px; height:22px; fill:currentColor; }.nav .active { color:#1b7af0; font-weight:750; }
+    .nav-avatar { width:47px; height:47px; margin-top:-13px; padding:2px; border-radius:50%; object-fit:contain; background:#eae1ff; box-shadow:0 5px 13px rgba(150,126,226,.28); }
+    .manage-header { height:50px; display:grid; grid-template-columns:40px 1fr 40px; align-items:center; margin:2px -6px 8px; }
+    .manage-header h1 { margin:0; text-align:center; font-size:17px; }.back { width:36px; height:36px; display:grid; place-items:center; border:0; border-radius:50%; color:var(--ink); background:transparent; }.back i { width:21px; }
+    .device-card { margin-top:14px; padding:15px; border-radius:20px; background:var(--surface); box-shadow:var(--shadow); }
+    .device-top { display:flex; align-items:center; gap:11px; }.device-icon { width:43px; height:43px; display:grid; place-items:center; flex:0 0 auto; border-radius:13px; color:var(--blue-deep); background:#eaf5ff; }.device-icon i { width:25px; height:25px; }.device-copy { min-width:0; flex:1; }.device-copy h3 { margin:0; font-size:16px; }.device-copy p { margin:5px 0 0; overflow:hidden; color:var(--muted); font-size:12px; text-overflow:ellipsis; white-space:nowrap; }.unbind { flex:0 0 auto; min-height:30px; padding:0 8px; border:0; border-radius:10px; color:#668ec0; background:#f2f8ff; font-size:13px; font-weight:700; }
+    .primary { width:100%; min-height:48px; border:0; border-radius:15px; color:#fff; background:var(--blue); box-shadow:0 9px 17px rgba(100,168,240,.2); font-size:16px; font-weight:750; }.primary:hover { background:var(--blue-deep); }
+    .manage-bottom-action { position:absolute; z-index:8; right:16px; bottom:20px; left:16px; }.empty { margin-top:14px; padding:36px 16px; text-align:center; border-radius:20px; background:var(--surface); box-shadow:var(--shadow); }.empty i { width:43px; height:43px; color:#a9b9cb; }.empty h2 { margin:9px 0 5px; font-size:17px; }.empty p { margin:0; color:var(--muted); font-size:13px; }
+    .toast { position:absolute; z-index:30; bottom:110px; left:50%; max-width:calc(100% - 50px); transform:translate(-50%,16px); padding:10px 13px; border-radius:12px; color:#fff; background:rgba(32,34,42,.9); font-size:13px; opacity:0; pointer-events:none; transition:opacity .18s ease,transform .18s ease; }.toast.show { opacity:1; transform:translate(-50%,0); }
+    .sheet-backdrop { position:absolute; z-index:20; inset:0; display:none; align-items:center; justify-content:center; padding:20px; background:rgba(30,28,39,.48); }.sheet-backdrop.open { display:flex; }.confirm-sheet { width:100%; max-width:328px; padding:23px 20px 18px; border-radius:20px; background:#fff; box-shadow:0 18px 40px rgba(28,26,39,.22); animation:pop .2s ease-out; }.handle { display:none; }.confirm-sheet h2 { margin:0; text-align:center; font-size:19px; }.confirm-sheet p { margin:10px 0 19px; color:#676a76; text-align:center; font-size:14px; line-height:1.6; }.sheet-actions { display:grid; grid-template-columns:1fr 1fr; gap:10px; }.sheet-actions button { min-height:44px; border:0; border-radius:13px; font-size:15px; font-weight:750; }.sheet-cancel { color:#5e6570; background:#f1f2f6; }.sheet-danger { color:#fff; background:var(--danger); }
+    .ai-drawer { position:absolute; z-index:25; right:0; bottom:0; left:0; display:none; height:min(88%,720px); overflow:hidden; border-radius:26px 26px 0 0; background:#f6f5fb; box-shadow:0 -12px 30px rgba(48,43,66,.18); animation:up .24s ease-out; }.ai-drawer.open { display:flex; flex-direction:column; }.drawer-header { min-height:60px; display:flex; align-items:center; justify-content:space-between; padding:10px 16px 8px; background:#fff; }.drawer-title { display:flex; align-items:center; gap:9px; font-size:16px; font-weight:800; }.drawer-title img { width:29px; height:29px; padding:2px; border-radius:50%; background:#e9e0fe; object-fit:contain; }.drawer-close { width:34px; height:34px; display:grid; place-items:center; border:0; border-radius:50%; color:#4f535e; background:#f3f3f7; }.drawer-close i { width:19px; }.bind-flow-frame { width:100%; flex:1; border:0; background:#f6f5fb; }
+    .device-card .task-picker-item{margin-top:12px}.manage-open .guardian-entry{bottom:80px}.guardian-entry{bottom:100px}
+    @keyframes spin { to { transform:rotate(360deg); } } @keyframes up { from { transform:translateY(100%); } to { transform:translateY(0); } } @keyframes pop { from { opacity:0; transform:scale(.94); } to { opacity:1; transform:scale(1); } }
+    @media (max-width:375px) { .phone { height:100dvh; min-height:100dvh; } }
+  </style>
+</head>
+<body>
+  <main class="phone ecg-shell" aria-label="心脏加健康设备管理">
+    <section id="myScreen" class="screen" aria-label="我的页面">
+      <div class="status"><span>10:30</span><span class="status-icons"><i data-lucide="signal-high"></i><i data-lucide="wifi"></i><span class="battery"></span></span></div>
+      <section class="profile"><div class="avatar"><i data-lucide="smile"></i></div><div><div class="profile-name">用户昵称 <i data-lucide="chevron-right"></i></div><div class="profile-phone">157****1803</div></div><div class="mileage"><div class="mileage-label"><i data-lucide="trophy"></i>心电里程</div><strong>316.81<small> 米</small></strong></div></section>
+      <button class="membership" type="button" onclick="showToast('更多会员权益，敬请期待')"><span><i data-lucide="crown"></i>会员卡</span><b>立即开通</b></button>
+      <section class="mini-grid"><article class="mini-tile"><h2>优惠券</h2><p><strong>10</strong>张优惠券可用</p></article><article class="mini-tile"><h2>权益卡</h2><p><strong>13</strong>张权益卡可用</p></article></section>
+      <section class="list-group" aria-label="健康服务">
+        <button class="list-row" type="button" onclick="window.location.href='record-lists.html?view=ecg'"><span class="row-icon red"><i data-lucide="heart-pulse"></i></span><span class="row-label">心电图记录</span><i data-lucide="chevron-right"></i></button>
+        <button class="list-row" type="button" onclick="window.location.href='record-lists.html?view=doctor'"><span class="row-icon sky"><i data-lucide="user-round-check"></i></span><span class="row-label">医生解读服务</span><i data-lucide="chevron-right"></i></button>
+        <button class="list-row" type="button" onclick="window.location.href='../index.html?from=ecg-my#/sourceSettings'"><span class="row-icon green"><i data-lucide="badge-check"></i></span><span class="row-label">健康数据授权</span><i data-lucide="chevron-right"></i></button>
+        <button class="list-row" type="button" onclick="openManage()"><span class="row-icon sky"><i data-lucide="smartphone"></i></span><span class="row-label">健康设备管理</span><i data-lucide="chevron-right"></i></button>
+        <button class="list-row" type="button" onclick="showToast('健康计划暂不支持修改')"><span class="row-icon sky"><i data-lucide="calendar-days"></i></span><span class="row-label">修改健康计划</span><i data-lucide="chevron-right"></i></button>
+        <button class="list-row" type="button" onclick="showToast('心脏ID设置暂未开放')"><span class="row-icon rose"><i data-lucide="heart"></i></span><span class="row-label">设置心脏ID</span><i data-lucide="chevron-right"></i></button>
+      </section>
+      <section class="list-group"><button class="list-row" type="button" onclick="showToast('客服通道暂未开放')"><span class="row-icon green"><i data-lucide="headphones"></i></span><span class="row-label">联系客服</span><i data-lucide="chevron-right"></i></button><button class="list-row" type="button" onclick="showToast('反馈通道暂未开放')"><span class="row-icon sky"><i data-lucide="message-square"></i></span><span class="row-label">反馈与建议</span><i data-lucide="chevron-right"></i></button><button class="list-row" type="button" onclick="showToast('暂无可调整项')"><span class="row-icon sky"><i data-lucide="settings"></i></span><span class="row-label">设置</span><i data-lucide="chevron-right"></i></button></section>
+    </section>
+
+    <section id="manageScreen" class="screen" aria-label="健康设备管理" hidden>
+      <div class="status"><span>10:30</span><span class="status-icons"><i data-lucide="signal-high"></i><i data-lucide="wifi"></i><span class="battery"></span></span></div>
+      <header class="manage-header"><button class="back" type="button" aria-label="返回我的页面" onclick="backToMy()"><i data-lucide="arrow-left"></i></button><h1>健康设备管理</h1><span></span></header>
+      <div id="deviceList"></div>
+    </section>
+
+    <div id="manageBindAction" class="manage-bottom-action" hidden><button class="primary" type="button" onclick="openBindDrawer()">绑定新设备</button></div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <div id="unbindSheet" class="sheet-backdrop" onclick="closeSheetByBackdrop(event)"><section class="confirm-sheet" role="dialog" aria-modal="true" aria-labelledby="unbindTitle"><div class="handle"></div><h2 id="unbindTitle">解绑设备</h2><p id="unbindCopy">解绑后，该设备将无法继续用于新的健康测量。如有未完成任务将无法查看，后续重新绑定后可继续处理。已保存的健康数据和分析结果不会被删除。</p><div class="sheet-actions"><button class="sheet-cancel" type="button" onclick="closeUnbindSheet()">取消</button><button class="sheet-danger" type="button" onclick="confirmUnbind()">确定解绑</button></div></section></div>
+
+    <section id="bindDrawer" class="ai-drawer" aria-label="AI 健康管家抽屉"><header class="drawer-header"><div class="drawer-title"><img src="assets/dongdong.png" alt="" />AI 健康管家</div><button class="drawer-close" type="button" aria-label="关闭AI健康管家抽屉" onclick="closeBindDrawer()"><i data-lucide="x"></i></button></header><iframe id="bindFlowFrame" class="bind-flow-frame" title="AI 健康管家流程"></iframe></section>
+  </main>
+
+  <script src="assets/prototype-state.js?v=20260901-3"></script><script src="assets/app-shell.js?v=20260901-3"></script>
+  <script>
+    const devices = PrototypeState.devices.filter(device => PrototypeState.isHealthDeviceBound(device.name)).map(device => ({ ...device, battery: `${device.battery}%` }));
+    let pendingUnbind = null;
+    let drawerActiveCard = null;
+    let bindSequence = 205;
+    let toastTimer;
+    const deviceList = document.getElementById('deviceList');
+    const bindFlowFrame = document.getElementById('bindFlowFrame');
+
+    function refreshIcons() { window.lucide && window.lucide.createIcons({ attrs: { 'stroke-width': 2 } }); }
+    function showToast(message) { const toast = document.getElementById('toast'); toast.textContent = message; toast.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove('show'), 1800); }
+    function openManage() { document.getElementById('myScreen').hidden = true; document.getElementById('manageScreen').hidden = false; document.querySelector('.phone').classList.add('manage-open'); document.getElementById('manageBindAction').hidden = false; renderDevices(); }
+    function backToMy() { document.getElementById('manageScreen').hidden = true; document.getElementById('myScreen').hidden = false; document.querySelector('.phone').classList.remove('manage-open'); document.getElementById('manageBindAction').hidden = true; }
+    function taskStatusCopy(task) {
+      if (task.status === 'waiting') return '测量已结束 · 待接收数据';
+      if (task.status === 'receiving') return '正在接收数据';
+      if (task.status === 'receive-error') return '数据接收异常 · 待处理';
+      return `测量中 · 剩 ${task.remaining}`;
+    }
+    function renderDevices() {
+      const tasks=PrototypeState.getDeviceTasks();
+      deviceList.innerHTML = devices.length ? devices.map(device => { const task=tasks.find(item=>item.deviceId===device.id); return `<article class="device-card"><div class="device-top"><span class="device-icon"><i data-lucide="${device.type==='card'?'credit-card':device.type==='watch'?'watch':'heart-pulse'}"></i></span><div class="device-copy"><h3>${device.name}</h3><p>${device.type==='watch'?'IMEI：'+device.imei:'SN：'+device.id} · 电量 ${device.battery}</p></div><button class="unbind" type="button" onclick="openUnbindSheet('${device.id}')">解绑</button></div>${task?`<button class="task-picker-item ${task.status} device-task" type="button" onclick="PrototypeShell.openTaskDrawer('${task.id}')"><span class="task-picker-icon"><i data-lucide="${task.status==='waiting'?'download':task.status==='receiving'?'download-cloud':task.status==='receive-error'?'circle-alert':'activity'}"></i></span><span class="task-picker-copy"><strong>${taskStatusCopy(task)}</strong><span>${PrototypeState.taskSubject(task)}</span></span><i data-lucide="chevron-right"></i></button>`:''}</article>`}).join('') : `<section class="empty"><i data-lucide="smartphone"></i><h2>暂未绑定健康设备</h2><p>绑定设备后，即可开始健康测量</p></section>`;
+      refreshIcons();
+    }
+    const unbindCopy = '解绑后，该设备将无法继续用于新的健康测量。如有未完成任务将无法查看，后续重新绑定后可继续处理。已保存的健康数据和分析结果不会被删除。';
+    function openUnbindSheet(id) {
+      const task = PrototypeState.getDeviceTasks().find(item => item.deviceId === id);
+      pendingUnbind = { id, task };
+      document.getElementById('unbindCopy').textContent = unbindCopy;
+      document.getElementById('unbindSheet').classList.add('open');
+    }
+    function closeUnbindSheet() { document.getElementById('unbindSheet').classList.remove('open'); pendingUnbind = null; }
+    function closeSheetByBackdrop(event) { if (event.target.id === 'unbindSheet') closeUnbindSheet(); }
+    function confirmUnbind() {
+      if (!pendingUnbind) return;
+      const { id } = pendingUnbind;
+      const index = devices.findIndex(device => device.id === id);
+      if (index >= 0) { const [removed] = devices.splice(index, 1); PrototypeState.setHealthDeviceBound(removed.name, devices.some(device => device.name === removed.name)); }
+      PrototypeState.unlinkDeviceTasks(id);
+      closeUnbindSheet();
+      renderDevices();
+      showToast('设备解绑成功');
+    }
+    function openBindDrawer() { document.getElementById('bindDrawer').classList.add('open'); bindFlowFrame.src = `index.html?drawer=bind&v=${Date.now()}`; }
+    function closeBindDrawer() { document.getElementById('bindDrawer').classList.remove('open'); bindFlowFrame.src = 'about:blank'; renderDevices(); }
+    function appendDrawerMessage(type, text) { const message = document.createElement('article'); message.className = `message ${type}`; message.innerHTML = type === 'ai' ? `<div class="speaker"><img src="assets/dongdong.png" alt="" />咚咚</div><div class="bubble">${text}</div>` : `<div class="bubble">${text}</div>`; drawerChat.append(message); scrollDrawer(); }
+    function createFlowCard(title, icon, state = '进行中') { const card = document.createElement('article'); card.className = 'flow-card'; card.innerHTML = `<div class="flow-head"><span><i data-lucide="${icon}"></i></span><h3>${title}</h3><span class="flow-state">${state}</span></div><div class="flow-body"></div>`; drawerChat.append(card); drawerActiveCard = card; refreshIcons(); scrollDrawer(); return card; }
+    function setFlowBody(card, html) { card.querySelector('.flow-body').innerHTML = html; refreshIcons(); scrollDrawer(); }
+    function lockCard(label) { if (!drawerActiveCard) return; drawerActiveCard.querySelectorAll('button').forEach(button => { button.disabled = true; }); drawerActiveCard.querySelector('.flow-state').textContent = label; drawerActiveCard = null; }
+    function scrollDrawer() { requestAnimationFrame(() => { drawerChat.scrollTop = drawerChat.scrollHeight; }); }
+    function renderBindingReady() { drawerChat.innerHTML = ''; appendDrawerMessage('ai', '好呀，咚咚来帮你。先打开手机蓝牙，再把心电卡片放在手机旁边。'); const card = createFlowCard('绑定心电卡片', 'bluetooth'); setFlowBody(card, `<div class="notice"><i data-lucide="credit-card"></i><span>请保持设备开启并靠近手机。绑定遇到问题时，可以随时问咚咚。</span></div><button class="primary drawer-primary" type="button" onclick="startDeviceSearch()">开始搜索</button><button class="text-action" type="button" onclick="bindingHelp()">绑定遇到问题</button>`); }
+    function bindingHelp() { appendDrawerMessage('ai', '请确认心电卡片已开启、手机蓝牙可用；如果仍然无法搜索，把设备放得更靠近手机后再试一次。'); }
+    function startDeviceSearch() { appendDrawerMessage('user', '开始搜索心电卡片'); lockCard('已开始搜索'); appendDrawerMessage('ai', '收到，咚咚正在寻找附近的心电卡片。搜索时请保持设备开启，并尽量靠近手机。'); const card = createFlowCard('正在搜索设备', 'radar'); setFlowBody(card, `<div class="searching"><span class="spinner"></span><span>搜索中，请稍候…</span></div><button class="text-action" type="button" onclick="stopDrawerSearch()">停止搜索</button>`); setTimeout(() => showFoundDevice(card), 850); }
+    function stopDrawerSearch() { lockCard('已停止搜索'); appendDrawerMessage('ai', '已停止搜索。准备好后，咚咚可以继续帮你查找附近的心电卡片。'); renderBindingReady(); }
+    function showFoundDevice(card) { if (drawerActiveCard !== card) return; card.querySelector('.flow-head h3').textContent = '发现 1 台可绑定设备'; card.querySelector('.flow-state').textContent = '可选择'; setFlowBody(card, `<div class="found-device"><button type="button" onclick="bindFoundDevice()"><span class="device-icon"><i data-lucide="credit-card"></i></span><span><strong>心电卡片</strong><small>SN：ECG-2026-${bindSequence} · 电量 76%</small></span><b>可绑定</b><i data-lucide="chevron-right"></i></button></div>`); }
+    function bindFoundDevice() { appendDrawerMessage('user', '绑定心电卡片'); lockCard('已选择设备'); appendDrawerMessage('ai', '找到了心电卡片，咚咚正在为你完成绑定，请稍等一下。'); const card = createFlowCard('正在绑定设备', 'link'); setFlowBody(card, `<div class="searching"><span class="spinner"></span><span>绑定中，请勿关闭页面…</span></div>`); setTimeout(() => completeBind(card), 850); }
+    function completeBind(card) { if (drawerActiveCard !== card) return; const serial = `ECG-2026-${bindSequence}`; devices.push({ id: serial, name: '心电卡片', battery: '76%' }); PrototypeState.setHealthDeviceBound('心电卡片', true); bindSequence += 1; card.querySelector('.flow-head h3').textContent = '心电卡片已绑定'; card.querySelector('.flow-head > span:first-child').innerHTML = '<i data-lucide="circle-check"></i>'; card.querySelector('.flow-state').textContent = '绑定完成'; setFlowBody(card, `<div class="success-line"><i data-lucide="circle-check"></i><span>绑定成功，可以开始健康测量。</span></div>`); lockCard('绑定完成'); appendDrawerMessage('ai', '绑定完成啦！现在要不要马上做一次心电测量？'); document.getElementById('drawerFoot').hidden = false; refreshIcons(); showToast('设备已绑定'); }
+    window.addEventListener('message', event => {
+      if (!event.data || event.source !== bindFlowFrame.contentWindow) return;
+      if (event.data.type !== 'ecg-device-bound') return;
+      const device = event.data.device;
+      if (device && !devices.some(item => item.id === device.id)) devices.push(device);
+      if (device) PrototypeState.setHealthDeviceBound(device.name, true);
+      renderDevices();
+      showToast('设备绑定成功');
+    });
+    renderDevices(); refreshIcons(); PrototypeShell.mount();
+    if (new URLSearchParams(location.search).get('view') === 'manage') openManage();
+  </script>
+</body>
+</html>
